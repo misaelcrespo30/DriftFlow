@@ -52,6 +52,26 @@ func main() {
 		},
 	})
 
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "seed",
+		Short: "Execute seed SQL files",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			return schema.Seed(db, migDir)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "validate",
+		Short: "Validate migration files",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return schema.Validate(migDir)
+		},
+	})
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -18,6 +18,8 @@ Run commands:
 schemaflow generate   # generate migrations
 schemaflow up         # apply pending migrations
 schemaflow down NAME  # rollback to a migration
+schemaflow seed       # execute seed files
+schemaflow validate   # validate migration directory
 schemaflow diff       # print schema differences
 ```
 
