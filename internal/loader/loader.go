@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"matters-service/schemaflow/internal/state"
+	"DriftFlow/internal/state"
 )
 
 // Load reads migration files from the given directory and returns their state.

@@ -10,8 +10,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	schema "matters-service/schemaflow"
-	"matters-service/schemaflow/config"
+	driftflow "DriftFlow"
+	"DriftFlow/config"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 
 func main() {
 	cfg := config.Load()
-	rootCmd := &cobra.Command{Use: "schemaflow"}
+	rootCmd := &cobra.Command{Use: "driftflow"}
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", cfg.DSN, "database DSN")
 	rootCmd.PersistentFlags().StringVar(&driver, "driver", cfg.Driver, "database driver")
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
@@ -35,7 +35,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			return schema.Up(db, migDir)
+			return driftflow.Up(db, migDir)
 		},
 	})
 
@@ -48,7 +48,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			return schema.Down(db, migDir, args[0])
+			return driftflow.Down(db, migDir, args[0])
 		},
 	})
 
@@ -60,7 +60,20 @@ func main() {
 			if err != nil {
 				return err
 			}
-			return schema.Seed(db, migDir)
+			return driftflow.Seed(db, migDir)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "migrate",
+		Short: "Generate and apply migrations from models",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			var models []interface{}
+			return driftflow.Migrate(db, migDir, models)
 		},
 	})
 
@@ -68,7 +81,7 @@ func main() {
 		Use:   "validate",
 		Short: "Validate migration files",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return schema.Validate(migDir)
+			return driftflow.Validate(migDir)
 		},
 	})
 
