@@ -1,4 +1,4 @@
-package schemaflow
+package driftflow
 
 import (
 	"fmt"
@@ -128,7 +128,86 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 }
 
 // GenerateMigrations is a placeholder for automatic generation.
-func GenerateMigrations(models []interface{}, dir string) error {
-	// TODO: implement automatic migration generation
+// GenerateMigrations inspects the database schema and writes migration files
+// for any new tables or columns found in the provided models. Only basic
+// additions are handled.
+func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+
+	var upStmts []string
+	var downStmts []string
+	for _, m := range models {
+		stmt := &gorm.Statement{DB: db}
+		if err := stmt.Parse(m); err != nil {
+			return err
+		}
+
+		exists := db.Migrator().HasTable(m)
+		if !exists {
+			dry := db.Session(&gorm.Session{DryRun: true})
+			if err := dry.Migrator().CreateTable(m); err != nil {
+				return err
+			}
+			upStmts = append(upStmts, dry.Statement.SQL.String())
+
+			drop := db.Session(&gorm.Session{DryRun: true})
+			if err := drop.Migrator().DropTable(m); err != nil {
+				return err
+			}
+			downStmts = append([]string{drop.Statement.SQL.String()}, downStmts...)
+			continue
+		}
+
+		cols, err := db.Migrator().ColumnTypes(m)
+		if err != nil {
+			return err
+		}
+		existing := map[string]struct{}{}
+		for _, c := range cols {
+			existing[strings.ToLower(c.Name())] = struct{}{}
+		}
+		for _, f := range stmt.Schema.Fields {
+			name := strings.ToLower(f.DBName)
+			if _, ok := existing[name]; ok {
+				continue
+			}
+			dry := db.Session(&gorm.Session{DryRun: true})
+			if err := dry.Migrator().AddColumn(m, f.DBName); err != nil {
+				return err
+			}
+			upStmts = append(upStmts, dry.Statement.SQL.String())
+
+			drop := db.Session(&gorm.Session{DryRun: true})
+			if err := drop.Migrator().DropColumn(m, f.DBName); err != nil {
+				return err
+			}
+			downStmts = append([]string{drop.Statement.SQL.String()}, downStmts...)
+		}
+	}
+
+	if len(upStmts) == 0 {
+		return nil
+	}
+
+	name := time.Now().Format("20060102150405") + "_auto"
+	upFile := filepath.Join(dir, name+".up.sql")
+	downFile := filepath.Join(dir, name+".down.sql")
+	if err := os.WriteFile(upFile, []byte(strings.Join(upStmts, "\n")), 0o644); err != nil {
+		return err
+	}
+	if err := os.WriteFile(downFile, []byte(strings.Join(downStmts, "\n")), 0o644); err != nil {
+		return err
+	}
 	return nil
+}
+
+// Migrate generates migrations from the given models and then applies all
+// pending migration files.
+func Migrate(db *gorm.DB, dir string, models []interface{}) error {
+	if err := GenerateMigrations(db, models, dir); err != nil {
+		return err
+	}
+	return Up(db, dir)
 }

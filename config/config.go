@@ -8,7 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config contains the minimal configuration required by the schemaflow CLI.
+// Config contains the minimal configuration required by the DriftFlow CLI.
 type Config struct {
 	DSN    string
 	Driver string

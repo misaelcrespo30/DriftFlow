@@ -1,4 +1,4 @@
-package schemaflow
+package driftflow
 
 import (
 	"os"
