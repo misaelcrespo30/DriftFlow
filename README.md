@@ -15,6 +15,7 @@ go build ./cmd/driftflow
 Run commands:
 
 ```bash
+driftflow generate   # generate migrations from models
 driftflow migrate    # generate migrations and apply them
 driftflow up         # apply pending migrations
 driftflow down NAME  # rollback to a migration

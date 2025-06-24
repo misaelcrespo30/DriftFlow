@@ -65,6 +65,19 @@ func main() {
 	})
 
 	rootCmd.AddCommand(&cobra.Command{
+		Use:   "generate",
+		Short: "Generate migration files from models",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			var models []interface{}
+			return driftflow.GenerateMigrations(db, models, migDir)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
 		Use:   "migrate",
 		Short: "Generate and apply migrations from models",
 		RunE: func(cmd *cobra.Command, args []string) error {
