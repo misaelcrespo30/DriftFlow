@@ -12,20 +12,26 @@ import (
 // SchemaAuditLog representa una fila en la tabla de auditoría
 type SchemaAuditLog struct {
 	ID       uint      `gorm:"primaryKey"`
-	Version  string    // Versión de la migración o nombre del seed
-	Action   string    // apply, rollback, seed, etc.
-	User     string    // usuario que ejecuta
-	Host     string    // hostname del sistema
-	LoggedAt time.Time `gorm:"autoCreateTime"` // timestamp automático
+	Version  string    // Versión de la migración o seed ejecutado
+	Action   string    // Tipo de acción: apply, rollback, seed, etc.
+	User     string    // Usuario del sistema
+	Host     string    // Nombre del host
+	LoggedAt time.Time `gorm:"autoCreateTime"` // Timestamp generado automáticamente
 }
 
-// TableName especifica la tabla usada por GORM
+// TableName define el nombre de la tabla usada por GORM
 func (SchemaAuditLog) TableName() string {
 	return "schema_audit_log"
 }
 
-// LogAuditEvent inserta una nueva entrada de auditoría en la tabla.
-// Detecta automáticamente el usuario y hostname del sistema.
+// EnsureAuditTable asegura que la tabla schema_audit_log exista.
+// Usa AutoMigrate para crearla si no está.
+func EnsureAuditTable(db *gorm.DB) error {
+	return db.AutoMigrate(&SchemaAuditLog{})
+}
+
+// LogAuditEvent inserta una nueva entrada de auditoría.
+// Detecta automáticamente el usuario y el hostname del sistema.
 func LogAuditEvent(db *gorm.DB, version string, action string) {
 	user := os.Getenv("USER")
 	if user == "" {
@@ -33,7 +39,6 @@ func LogAuditEvent(db *gorm.DB, version string, action string) {
 			user = strings.TrimSpace(string(out))
 		}
 	}
-
 	host, _ := os.Hostname()
 
 	entry := SchemaAuditLog{
@@ -43,10 +48,10 @@ func LogAuditEvent(db *gorm.DB, version string, action string) {
 		Host:    host,
 	}
 
-	_ = db.Create(&entry).Error // ignoramos el error por simplicidad
+	_ = db.Create(&entry).Error // Ignoramos el error por simplicidad
 }
 
-// ListAuditLog devuelve todas las entradas de auditoría ordenadas por timestamp
+// ListAuditLog retorna todas las entradas de auditoría ordenadas por LoggedAt
 func ListAuditLog(db *gorm.DB) ([]SchemaAuditLog, error) {
 	var logs []SchemaAuditLog
 	if err := db.Order("logged_at").Find(&logs).Error; err != nil {
