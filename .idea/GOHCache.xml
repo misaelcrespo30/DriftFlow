@@ -66,7 +66,7 @@
         <entry key="file://$PROJECT_DIR$/audit.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813862347" />
+              <option name="lastModified" value="1750814765543" />
               <option name="schema">
                 <list>
                   <option value="SchemaAuditLog" />
