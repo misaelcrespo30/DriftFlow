@@ -17,6 +17,13 @@
             </set>
           </value>
         </entry>
+        <entry key="MigrationState">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/state/state.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="SchemaAuditLog">
           <value>
             <set>
@@ -31,7 +38,21 @@
             </set>
           </value>
         </entry>
+        <entry key="SchemaState">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/state/state.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="State">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/state/state.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TableInfo">
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/internal/state/state.go" />
@@ -42,6 +63,13 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/seed_test.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="result">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/state/state.go" />
             </set>
           </value>
         </entry>
@@ -174,10 +202,13 @@
         <entry key="file://$PROJECT_DIR$/internal/state/state.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750794616967" />
+              <option name="lastModified" value="1750821639665" />
               <option name="schema">
                 <list>
-                  <option value="State" />
+                  <option value="MigrationState" />
+                  <option value="TableInfo" />
+                  <option value="SchemaState" />
+                  <option value="result" />
                 </list>
               </option>
             </ScannedPath>
@@ -293,11 +324,15 @@
       <map>
         <entry key="audit_log" value="AuditLog" />
         <entry key="config" value="Config" />
+        <entry key="migration_state" value="MigrationState" />
         <entry key="mock_seeder" value="mockSeeder" />
+        <entry key="result" value="result" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
+        <entry key="schema_state" value="SchemaState" />
         <entry key="schema_user" value="schemaUser" />
         <entry key="state" value="State" />
+        <entry key="table_info" value="TableInfo" />
         <entry key="tmpl_model" value="tmplModel" />
       </map>
     </option>
