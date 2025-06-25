@@ -66,7 +66,7 @@
         <entry key="file://$PROJECT_DIR$/audit.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750814765543" />
+              <option name="lastModified" value="1750815116651" />
               <option name="schema">
                 <list>
                   <option value="SchemaAuditLog" />
@@ -78,14 +78,14 @@
         <entry key="file://$PROJECT_DIR$/audit_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813915084" />
+              <option name="lastModified" value="1750815116651" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/cmd/driftflow.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742875" />
+              <option name="lastModified" value="1750815523212" />
             </ScannedPath>
           </value>
         </entry>
@@ -96,10 +96,17 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/compare.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750815135949" />
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/compare_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742875" />
+              <option name="lastModified" value="1750815839798" />
             </ScannedPath>
           </value>
         </entry>
@@ -118,14 +125,14 @@
         <entry key="file://$PROJECT_DIR$/connect.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742876" />
+              <option name="lastModified" value="1750815116654" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/connect_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742876" />
+              <option name="lastModified" value="1750815116654" />
             </ScannedPath>
           </value>
         </entry>
@@ -198,21 +205,21 @@
         <entry key="file://$PROJECT_DIR$/schema.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742878" />
+              <option name="lastModified" value="1750815116659" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/schema_compare.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742879" />
+              <option name="lastModified" value="1750815116660" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/schema_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813742880" />
+              <option name="lastModified" value="1750815116660" />
               <option name="schema">
                 <list>
                   <option value="schemaUser" />
