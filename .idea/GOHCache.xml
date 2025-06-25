@@ -17,6 +17,13 @@
             </set>
           </value>
         </entry>
+        <entry key="SchemaAuditLog">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/audit.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="SchemaMigration">
           <value>
             <set>
@@ -38,10 +45,10 @@
         <entry key="file://$PROJECT_DIR$/audit.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813339140" />
+              <option name="lastModified" value="1750813862347" />
               <option name="schema">
                 <list>
-                  <option value="AuditLog" />
+                  <option value="SchemaAuditLog" />
                 </list>
               </option>
             </ScannedPath>
@@ -50,7 +57,7 @@
         <entry key="file://$PROJECT_DIR$/audit_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750813496485" />
+              <option name="lastModified" value="1750813915084" />
             </ScannedPath>
           </value>
         </entry>
@@ -166,6 +173,7 @@
       <map>
         <entry key="audit_log" value="AuditLog" />
         <entry key="config" value="Config" />
+        <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
         <entry key="state" value="State" />
       </map>
