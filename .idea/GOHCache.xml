@@ -3,6 +3,13 @@
   <component name="GoORMHelperCache">
     <option name="schemaMapping">
       <map>
+        <entry key="AuditLog">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/audit.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="Config">
           <value>
             <set>
@@ -28,6 +35,25 @@
     </option>
     <option name="scannedPathMapping">
       <map>
+        <entry key="file://$PROJECT_DIR$/audit.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813339140" />
+              <option name="schema">
+                <list>
+                  <option value="AuditLog" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/audit_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813496485" />
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/cmd/schemaflow.go">
           <value>
             <ScannedPath>
@@ -138,6 +164,7 @@
     </option>
     <option name="tableStructMapping">
       <map>
+        <entry key="audit_log" value="AuditLog" />
         <entry key="config" value="Config" />
         <entry key="schema_migration" value="SchemaMigration" />
         <entry key="state" value="State" />
