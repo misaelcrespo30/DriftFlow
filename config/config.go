@@ -61,8 +61,6 @@ func buildDSN(driver string) string {
 		return fmt.Sprintf("mysql://%s:%s@tcp(%s:%s)/%s", user, pass, host, port, name)
 	case "sqlserver":
 		return fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s", user, pass, host, port, name)
-	case "sqlite":
-		return fmt.Sprintf("file:%s?cache=shared", name)
 	default:
 		return ""
 	}

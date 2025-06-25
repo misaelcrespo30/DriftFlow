@@ -34,7 +34,7 @@ migrations programmatically.
 
 DriftFlow loads configuration from environment variables or a `.env` file:
 
-- `DB_TYPE` sets the database driver (`postgres`, `mysql`, `sqlserver`, `sqlite`). Defaults to `postgres`.
+- `DB_TYPE` sets the database driver (`postgres`, `mysql`, `sqlserver`). Defaults to `postgres`.
 - `DSN` provides the full database connection string. When not set, a DSN is assembled from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_SSLMODE`.
 - `MIG_DIR` specifies where `.sql` migration files live (default `migrations`).
 - `SEED_DIR` specifies where JSON seed files live (default `seeds`).

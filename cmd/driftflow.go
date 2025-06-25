@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
@@ -259,5 +258,5 @@ func openDSN(d string) (*gorm.DB, error) {
 	if strings.HasPrefix(d, "sqlserver://") {
 		return gorm.Open(sqlserver.Open(d), &gorm.Config{})
 	}
-	return gorm.Open(sqlite.Open(d), &gorm.Config{})
+	return nil, fmt.Errorf("unsupported DSN: %s", d)
 }
