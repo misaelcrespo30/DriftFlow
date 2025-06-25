@@ -19,6 +19,7 @@ driftflow generate   # generate migrations from models
 driftflow migrate    # generate migrations and apply them
 driftflow up         # apply pending migrations
 driftflow down NAME  # rollback to a migration
+driftflow undo [n]   # rollback the last n migrations (default 1)
 driftflow seed       # execute JSON seed files
 driftflow seedgen    # generate JSON seed templates
 driftflow validate   # validate migration directory

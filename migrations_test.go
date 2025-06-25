@@ -52,3 +52,34 @@ func TestUpAndDown(t *testing.T) {
 		t.Fatalf("users table should remain")
 	}
 }
+
+func TestDownSteps(t *testing.T) {
+	dir := t.TempDir()
+	writeMigration(t, dir, "001_create_users", "CREATE TABLE users(id integer primary key);", "DROP TABLE users;")
+	writeMigration(t, dir, "002_create_addresses", "CREATE TABLE addresses(id integer primary key);", "DROP TABLE addresses;")
+
+	db := setupDB(t)
+
+	if err := Up(db, dir); err != nil {
+		t.Fatalf("up: %v", err)
+	}
+
+	if err := DownSteps(db, dir, 1); err != nil {
+		t.Fatalf("down steps: %v", err)
+	}
+
+	if db.Migrator().HasTable("addresses") {
+		t.Fatalf("addresses table should be dropped")
+	}
+	if !db.Migrator().HasTable("users") {
+		t.Fatalf("users table should remain")
+	}
+
+	if err := DownSteps(db, dir, 1); err != nil {
+		t.Fatalf("down steps 2: %v", err)
+	}
+
+	if db.Migrator().HasTable("users") {
+		t.Fatalf("users table should be dropped")
+	}
+}
