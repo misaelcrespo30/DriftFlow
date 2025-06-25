@@ -2,11 +2,10 @@ package driftflow
 
 import (
 	"time"
-
 	"gorm.io/gorm"
 )
 
-// AuditLog represents a single audit entry.
+// AuditLog represents a single audit entry in the audit_logs table.
 type AuditLog struct {
 	ID        uint
 	Table     string
@@ -15,6 +14,7 @@ type AuditLog struct {
 	CreatedAt time.Time
 }
 
+// TableName overrides the default table name
 func (AuditLog) TableName() string {
 	return "audit_logs"
 }
@@ -27,3 +27,4 @@ func ListAuditLog(db *gorm.DB) ([]AuditLog, error) {
 	}
 	return logs, nil
 }
+
