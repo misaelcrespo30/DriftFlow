@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GoORMHelperCache">
+    <option name="schemaMapping">
+      <map>
+        <entry key="Config">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/config/config.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="SchemaMigration">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/migrations.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="State">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/state/state.go" />
+            </set>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="scannedPathMapping">
+      <map>
+        <entry key="file://$PROJECT_DIR$/cmd/schemaflow.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750801567527" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/config/config.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750796270976" />
+              <option name="schema">
+                <list>
+                  <option value="Config" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/diff/diff.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750797925679" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/executor/executor.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750797925679" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/generator/generator.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750797925689" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/loader/loader.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750794616967" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/state/state.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750794616967" />
+              <option name="schema">
+                <list>
+                  <option value="State" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/migrations.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750797925689" />
+              <option name="schema">
+                <list>
+                  <option value="SchemaMigration" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/migrations_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750797925689" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/schemaflow.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750797925689" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/seed.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750801567529" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/validate.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750801567529" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/validate_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750801567531" />
+            </ScannedPath>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="tableStructMapping">
+      <map>
+        <entry key="config" value="Config" />
+        <entry key="schema_migration" value="SchemaMigration" />
+        <entry key="state" value="State" />
+      </map>
+    </option>
+    <option name="lastTimeChecked" value="1750801594952" />
+  </component>
+</project>
