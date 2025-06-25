@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gorm.io/driver/mysql"
@@ -111,6 +114,68 @@ func main() {
 			return driftflow.Validate(migDir)
 		},
 	})
+
+	auditCmd := &cobra.Command{
+		Use:   "audit",
+		Short: "Audit log commands",
+	}
+
+	auditCmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "List audit log entries",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			logs, err := driftflow.ListAuditLog(db)
+			if err != nil {
+				return err
+			}
+			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(w, "ID\tTABLE\tACTION\tDATA\tCREATED_AT")
+			for _, l := range logs {
+				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", l.ID, l.Table, l.Action, l.Data, l.CreatedAt.Format(time.RFC3339))
+			}
+			w.Flush()
+			return nil
+		},
+	})
+
+	var jsonOut bool
+	exportCmd := &cobra.Command{
+		Use:   "export",
+		Short: "Export audit log",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			logs, err := driftflow.ListAuditLog(db)
+			if err != nil {
+				return err
+			}
+			if jsonOut {
+				b, err := json.MarshalIndent(logs, "", "  ")
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+				return nil
+			}
+			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+			fmt.Fprintln(w, "ID\tTABLE\tACTION\tDATA\tCREATED_AT")
+			for _, l := range logs {
+				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", l.ID, l.Table, l.Action, l.Data, l.CreatedAt.Format(time.RFC3339))
+			}
+			w.Flush()
+			return nil
+		},
+	}
+	exportCmd.Flags().BoolVar(&jsonOut, "json", false, "output as JSON")
+	auditCmd.AddCommand(exportCmd)
+
+	rootCmd.AddCommand(auditCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
