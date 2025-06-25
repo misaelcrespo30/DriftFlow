@@ -1,27 +1,30 @@
 package driftflow
 
 import (
-	"os"
 	"path/filepath"
-	"sort"
+	"reflect"
+	"strings"
 
 	"gorm.io/gorm"
 )
 
-// Seed executes all SQL seed files in the given directory. Files are executed
-// in alphabetical order and must have a `.seed.sql` suffix.
-func Seed(db *gorm.DB, dir string) error {
-	files, err := filepath.Glob(filepath.Join(dir, "*.seed.sql"))
-	if err != nil {
-		return err
-	}
-	sort.Strings(files)
-	for _, f := range files {
-		b, err := os.ReadFile(f)
-		if err != nil {
-			return err
+// Seeder defines a type that can seed itself using a JSON file.
+type Seeder interface {
+	Seed(db *gorm.DB, filePath string) error
+}
+
+// Seed executes the Seed method of each provided Seeder using files in dir.
+// The file name is derived from the seeder type name in lower case with a .json
+// extension (e.g. Bookmark -> bookmark.json).
+func Seed(db *gorm.DB, dir string, seeders []Seeder) error {
+	for _, s := range seeders {
+		t := reflect.TypeOf(s)
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
 		}
-		if err := db.Exec(string(b)).Error; err != nil {
+		file := strings.ToLower(t.Name()) + ".json"
+		path := filepath.Join(dir, file)
+		if err := s.Seed(db, path); err != nil {
 			return err
 		}
 	}

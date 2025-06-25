@@ -19,9 +19,14 @@ driftflow generate   # generate migrations from models
 driftflow migrate    # generate migrations and apply them
 driftflow up         # apply pending migrations
 driftflow down NAME  # rollback to a migration
-driftflow seed       # execute seed files
+driftflow seed       # execute JSON seed files
+driftflow seedgen    # generate JSON seed templates
 driftflow validate   # validate migration directory
 ```
 
 The package also exposes a Go API for loading migration state and executing
 migrations programmatically.
+
+### Environment
+
+`SEED_DIR` can be used to specify where JSON seed files are located (default `seeds`).
