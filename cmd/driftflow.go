@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	dsn    string
-	driver string
-	migDir string
+	dsn     string
+	driver  string
+	migDir  string
+	seedDir string
 )
 
 func main() {
@@ -26,6 +27,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", cfg.DSN, "database DSN")
 	rootCmd.PersistentFlags().StringVar(&driver, "driver", cfg.Driver, "database driver")
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
+	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "up",
@@ -54,13 +56,25 @@ func main() {
 
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "seed",
-		Short: "Execute seed SQL files",
+		Short: "Execute JSON seed files",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			db, err := openDB()
 			if err != nil {
 				return err
 			}
-			return driftflow.Seed(db, migDir)
+			// no default models; users should populate seeders slice in their build
+			var seeders []driftflow.Seeder
+			return driftflow.Seed(db, seedDir, seeders)
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "seedgen",
+		Short: "Generate JSON seed templates from models",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// users should provide their models implementing Seeder
+			var models []interface{}
+			return driftflow.GenerateSeedTemplates(models, seedDir)
 		},
 	})
 

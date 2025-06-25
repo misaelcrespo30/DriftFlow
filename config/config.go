@@ -10,9 +10,10 @@ import (
 
 // Config contains the minimal configuration required by the DriftFlow CLI.
 type Config struct {
-	DSN    string
-	Driver string
-	MigDir string
+	DSN     string
+	Driver  string
+	MigDir  string
+	SeedDir string
 }
 
 // Load reads environment variables (from the system or a .env file) and
@@ -23,9 +24,10 @@ func Load() *Config {
 
 	driver := getEnvOrDefault("DB_TYPE", "postgres")
 	cfg := &Config{
-		DSN:    os.Getenv("DSN"),
-		Driver: driver,
-		MigDir: getEnvOrDefault("MIG_DIR", "migrations"),
+		DSN:     os.Getenv("DSN"),
+		Driver:  driver,
+		MigDir:  getEnvOrDefault("MIG_DIR", "migrations"),
+		SeedDir: getEnvOrDefault("SEED_DIR", "seeds"),
 	}
 
 	if cfg.DSN == "" {
