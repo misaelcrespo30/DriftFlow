@@ -133,9 +133,9 @@ func main() {
 				return err
 			}
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tTABLE\tACTION\tDATA\tCREATED_AT")
+			fmt.Fprintln(w, "ID\tVERSION\tCOMMIT\tACTION\tUSER\tHOST\tLOGGED_AT")
 			for _, l := range logs {
-				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", l.ID, l.Table, l.Action, l.Data, l.CreatedAt.Format(time.RFC3339))
+				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", l.ID, l.Version, l.Commit, l.Action, l.User, l.Host, l.LoggedAt.Format(time.RFC3339))
 			}
 			w.Flush()
 			return nil
@@ -164,9 +164,9 @@ func main() {
 				return nil
 			}
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tTABLE\tACTION\tDATA\tCREATED_AT")
+			fmt.Fprintln(w, "ID\tVERSION\tCOMMIT\tACTION\tUSER\tHOST\tLOGGED_AT")
 			for _, l := range logs {
-				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", l.ID, l.Table, l.Action, l.Data, l.CreatedAt.Format(time.RFC3339))
+				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", l.ID, l.Version, l.Commit, l.Action, l.User, l.Host, l.LoggedAt.Format(time.RFC3339))
 			}
 			w.Flush()
 			return nil

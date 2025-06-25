@@ -13,6 +13,7 @@ import (
 type SchemaAuditLog struct {
 	ID       uint      `gorm:"primaryKey"`
 	Version  string    // Versión de la migración o seed ejecutado
+	Commit   string    // Hash del commit de Git
 	Action   string    // Tipo de acción: apply, rollback, seed, etc.
 	User     string    // Usuario del sistema
 	Host     string    // Nombre del host
@@ -30,6 +31,14 @@ func EnsureAuditTable(db *gorm.DB) error {
 	return db.AutoMigrate(&SchemaAuditLog{})
 }
 
+func gitCommitHash() string {
+	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
 // LogAuditEvent inserta una nueva entrada de auditoría.
 // Detecta automáticamente el usuario y el hostname del sistema.
 func LogAuditEvent(db *gorm.DB, version string, action string) {
@@ -40,9 +49,11 @@ func LogAuditEvent(db *gorm.DB, version string, action string) {
 		}
 	}
 	host, _ := os.Hostname()
+	commit := gitCommitHash()
 
 	entry := SchemaAuditLog{
 		Version: version,
+		Commit:  commit,
 		Action:  action,
 		User:    user,
 		Host:    host,

@@ -44,6 +44,9 @@ func TestLogAuditEvent(t *testing.T) {
 	if log.Host == "" {
 		t.Errorf("expected host to be set, got empty")
 	}
+	if log.Commit == "" {
+		t.Errorf("expected commit hash to be recorded")
+	}
 	if log.LoggedAt.IsZero() {
 		t.Errorf("expected LoggedAt timestamp to be set")
 	}

@@ -61,6 +61,7 @@ func Up(db *gorm.DB, dir string) error {
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
+	_ = EnsureAuditTable(db)
 	ups, _, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
@@ -84,6 +85,7 @@ func Up(db *gorm.DB, dir string) error {
 		if err := recordMigration(db, version); err != nil {
 			return err
 		}
+		LogAuditEvent(db, version, "apply")
 	}
 	return nil
 }
@@ -93,6 +95,7 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
+	_ = EnsureAuditTable(db)
 	_, downs, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
@@ -123,6 +126,7 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 		if err := removeMigration(db, m.Version); err != nil {
 			return err
 		}
+		LogAuditEvent(db, m.Version, "rollback")
 	}
 	return nil
 }
