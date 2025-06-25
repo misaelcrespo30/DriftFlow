@@ -32,3 +32,28 @@ func TestGenerateSeedTemplates(t *testing.T) {
 		t.Fatalf("unexpected file:\n%s", got)
 	}
 }
+
+func TestGenerateSeedTemplatesWithData(t *testing.T) {
+	dir := t.TempDir()
+	gens := map[string]func() interface{}{
+		"name": func() interface{} { return "alice" },
+		"age":  func() interface{} { return 30 },
+	}
+	if err := GenerateSeedTemplatesWithData([]interface{}{tmplModel{}}, dir, gens); err != nil {
+		t.Fatalf("generate: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "tmplmodel.json"))
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	got := strings.TrimSpace(string(data))
+	expect := strings.TrimSpace(`[
+  {
+    "name": "alice",
+    "age": 30
+  }
+]`)
+	if got != expect {
+		t.Fatalf("unexpected file:\n%s", got)
+	}
+}

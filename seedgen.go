@@ -27,6 +27,13 @@ func zeroValue(t reflect.Type) interface{} {
 // GenerateSeedTemplates writes JSON seed templates for the provided models into dir.
 // Existing files are left untouched.
 func GenerateSeedTemplates(models []interface{}, dir string) error {
+	return GenerateSeedTemplatesWithData(models, dir, nil)
+}
+
+// GenerateSeedTemplatesWithData is like GenerateSeedTemplates but allows providing
+// custom generator functions for field values. The map key should match the JSON
+// field name. If no generator is found for a field, a zero value is used.
+func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[string]func() interface{}) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
@@ -56,6 +63,12 @@ func GenerateSeedTemplates(models []interface{}, dir string) error {
 			name := strings.Split(tag, ",")[0]
 			if name == "" {
 				name = strings.ToLower(f.Name)
+			}
+			if gens != nil {
+				if fn, ok := gens[name]; ok {
+					obj[name] = fn()
+					continue
+				}
 			}
 			obj[name] = zeroValue(f.Type)
 		}

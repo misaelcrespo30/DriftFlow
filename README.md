@@ -30,3 +30,16 @@ migrations programmatically.
 ### Environment
 
 `SEED_DIR` can be used to specify where JSON seed files are located (default `seeds`).
+
+### Dynamic seed templates
+
+You can provide generator functions to populate template values when using
+`GenerateSeedTemplatesWithData`:
+
+```go
+gens := map[string]func() interface{}{
+    "name": func() interface{} { return "Alice" },
+    "age":  func() interface{} { return 30 },
+}
+driftflow.GenerateSeedTemplatesWithData([]interface{}{User{}}, "seeds", gens)
+```
