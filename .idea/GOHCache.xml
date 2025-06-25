@@ -94,7 +94,7 @@
         <entry key="file://$PROJECT_DIR$/audit.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750815116651" />
+              <option name="lastModified" value="1750819705662" />
               <option name="schema">
                 <list>
                   <option value="SchemaAuditLog" />
@@ -113,7 +113,7 @@
         <entry key="file://$PROJECT_DIR$/cmd/driftflow.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750850271085" />
+              <option name="lastModified" value="1750874897951" />
             </ScannedPath>
           </value>
         </entry>
@@ -134,14 +134,14 @@
         <entry key="file://$PROJECT_DIR$/compare_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750815839798" />
+              <option name="lastModified" value="1750851675229" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/config/config.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750810675942" />
+              <option name="lastModified" value="1750851466623" />
               <option name="schema">
                 <list>
                   <option value="Config" />
@@ -153,7 +153,7 @@
         <entry key="file://$PROJECT_DIR$/connect.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750815116654" />
+              <option name="lastModified" value="1750875275699" />
             </ScannedPath>
           </value>
         </entry>
@@ -195,7 +195,14 @@
         <entry key="file://$PROJECT_DIR$/internal/loader/loader.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750803381796" />
+              <option name="lastModified" value="1750875014451" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/loader/loader_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750821242479" />
             </ScannedPath>
           </value>
         </entry>
@@ -218,7 +225,7 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750803381796" />
+              <option name="lastModified" value="1750819705670" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
@@ -270,7 +277,7 @@
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750810675944" />
+              <option name="lastModified" value="1750819705670" />
             </ScannedPath>
           </value>
         </entry>
@@ -289,14 +296,14 @@
         <entry key="file://$PROJECT_DIR$/seedgen.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750810675945" />
+              <option name="lastModified" value="1750817660084" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/seedgen_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750810675945" />
+              <option name="lastModified" value="1750851834399" />
               <option name="schema">
                 <list>
                   <option value="tmplModel" />
@@ -308,14 +315,14 @@
         <entry key="file://$PROJECT_DIR$/validate.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750850793054" />
+              <option name="lastModified" value="1750851466630" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/validate_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750803381796" />
+              <option name="lastModified" value="1750851601567" />
             </ScannedPath>
           </value>
         </entry>

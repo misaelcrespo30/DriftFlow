@@ -15,8 +15,8 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
-	driftflow "DriftFlow"
-	"DriftFlow/config"
+	driftflow "github.com/misaelcrespo30/DriftFlow"
+	"github.com/misaelcrespo30/DriftFlow/config"
 )
 
 var (

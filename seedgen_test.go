@@ -1,9 +1,10 @@
 package driftflow
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
+	"reflect"
 	"testing"
 )
 
@@ -14,46 +15,61 @@ type tmplModel struct {
 
 func TestGenerateSeedTemplates(t *testing.T) {
 	dir := t.TempDir()
-	if err := GenerateSeedTemplates([]interface{}{tmplModel{}}, dir); err != nil {
+
+	err := GenerateSeedTemplates([]interface{}{tmplModel{}}, dir)
+	if err != nil {
 		t.Fatalf("generate: %v", err)
 	}
+
+	// Leer el archivo generado
 	data, err := os.ReadFile(filepath.Join(dir, "tmplmodel.json"))
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	got := strings.TrimSpace(string(data))
-	expect := strings.TrimSpace(`[
-  {
-    "name": "",
-    "age": 0
-  }
-]`)
-	if got != expect {
-		t.Fatalf("unexpected file:\n%s", got)
+
+	// Deserializar para comparar por estructura
+	var got []tmplModel
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("unmarshal got: %v", err)
+	}
+
+	// Esperado
+	expected := []tmplModel{{Name: "", Age: 0}}
+
+	if !reflect.DeepEqual(got, expected) {
+		t.Fatalf("unexpected content:\n got: %#v\nwant: %#v", got, expected)
 	}
 }
 
 func TestGenerateSeedTemplatesWithData(t *testing.T) {
 	dir := t.TempDir()
+
+	// Generadores de datos personalizados
 	gens := map[string]func() interface{}{
 		"name": func() interface{} { return "alice" },
 		"age":  func() interface{} { return 30 },
 	}
-	if err := GenerateSeedTemplatesWithData([]interface{}{tmplModel{}}, dir, gens); err != nil {
+
+	err := GenerateSeedTemplatesWithData([]interface{}{tmplModel{}}, dir, gens)
+	if err != nil {
 		t.Fatalf("generate: %v", err)
 	}
+
+	// Leer el archivo generado
 	data, err := os.ReadFile(filepath.Join(dir, "tmplmodel.json"))
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	got := strings.TrimSpace(string(data))
-	expect := strings.TrimSpace(`[
-  {
-    "name": "alice",
-    "age": 30
-  }
-]`)
-	if got != expect {
-		t.Fatalf("unexpected file:\n%s", got)
+
+	// Deserializar
+	var got []tmplModel
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("unmarshal got: %v", err)
+	}
+
+	expected := []tmplModel{{Name: "alice", Age: 30}}
+
+	if !reflect.DeepEqual(got, expected) {
+		t.Fatalf("unexpected content:\n got: %#v\nwant: %#v", got, expected)
 	}
 }

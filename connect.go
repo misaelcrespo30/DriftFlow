@@ -3,7 +3,7 @@ package driftflow
 import (
 	"fmt"
 
-	"DriftFlow/config"
+	"github.com/misaelcrespo30/DriftFlow/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"

@@ -2,10 +2,10 @@ package loader
 
 import (
 	"context"
+	"github.com/misaelcrespo30/DriftFlow/config"
 	"path/filepath"
 
-	"DriftFlow/config"
-	"DriftFlow/internal/state"
+	"github.com/misaelcrespo30/DriftFlow/internal/state"
 )
 
 // Load returns the migration state by reading `.sql` files from dir. If dir is

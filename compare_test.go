@@ -3,8 +3,6 @@ package driftflow
 import (
 	"reflect"
 	"testing"
-
-	"gorm.io/gorm"
 )
 
 //
