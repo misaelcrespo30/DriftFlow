@@ -38,6 +38,27 @@
             </set>
           </value>
         </entry>
+        <entry key="mockSeeder">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/seed_test.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="schemaUser">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/schema_test.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="tmplModel">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/seedgen_test.go" />
+            </set>
+          </value>
+        </entry>
       </map>
     </option>
     <option name="scannedPathMapping">
@@ -61,6 +82,13 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/cmd/driftflow.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742875" />
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/cmd/schemaflow.go">
           <value>
             <ScannedPath>
@@ -68,15 +96,43 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/compare_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742875" />
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/config/config.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750796270976" />
+              <option name="lastModified" value="1750810675942" />
               <option name="schema">
                 <list>
                   <option value="Config" />
                 </list>
               </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/connect.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742876" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/connect_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742876" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/helpers/helpers.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750810675942" />
             </ScannedPath>
           </value>
         </entry>
@@ -104,7 +160,7 @@
         <entry key="file://$PROJECT_DIR$/internal/loader/loader.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750794616967" />
+              <option name="lastModified" value="1750803381796" />
             </ScannedPath>
           </value>
         </entry>
@@ -123,7 +179,7 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750797925689" />
+              <option name="lastModified" value="1750803381796" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
@@ -135,7 +191,33 @@
         <entry key="file://$PROJECT_DIR$/migrations_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750797925689" />
+              <option name="lastModified" value="1750803381796" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/schema.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742878" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/schema_compare.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742879" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/schema_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750813742880" />
+              <option name="schema">
+                <list>
+                  <option value="schemaUser" />
+                </list>
+              </option>
             </ScannedPath>
           </value>
         </entry>
@@ -149,21 +231,52 @@
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750801567529" />
+              <option name="lastModified" value="1750810675944" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/seed_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750810675945" />
+              <option name="schema">
+                <list>
+                  <option value="mockSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/seedgen.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750810675945" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/seedgen_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750810675945" />
+              <option name="schema">
+                <list>
+                  <option value="tmplModel" />
+                </list>
+              </option>
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/validate.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750801567529" />
+              <option name="lastModified" value="1750803381796" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/validate_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750801567531" />
+              <option name="lastModified" value="1750803381796" />
             </ScannedPath>
           </value>
         </entry>
@@ -173,9 +286,12 @@
       <map>
         <entry key="audit_log" value="AuditLog" />
         <entry key="config" value="Config" />
+        <entry key="mock_seeder" value="mockSeeder" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
+        <entry key="schema_user" value="schemaUser" />
         <entry key="state" value="State" />
+        <entry key="tmpl_model" value="tmplModel" />
       </map>
     </option>
     <option name="lastTimeChecked" value="1750801594952" />
