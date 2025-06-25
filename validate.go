@@ -6,9 +6,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 // Validate checks migration files for common issues such as duplicated names
@@ -23,11 +20,6 @@ func Validate(dir string) error {
 	duplicates := []string{}
 	missingDown := []string{}
 	namingIssues := []string{}
-
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
-	if err != nil {
-		return err
-	}
 
 	for _, e := range entries {
 		if e.IsDir() || !strings.HasSuffix(e.Name(), ".up.sql") {
@@ -52,9 +44,6 @@ func Validate(dir string) error {
 			return err
 		}
 		namingIssues = append(namingIssues, checkNamingConventions(string(sqlBytes))...)
-		if err := dryRunSQL(db, string(sqlBytes)); err != nil {
-			return fmt.Errorf("%s: %w", e.Name(), err)
-		}
 	}
 	if len(duplicates) > 0 || len(missingDown) > 0 || len(namingIssues) > 0 {
 		var sb strings.Builder
@@ -77,20 +66,6 @@ func Validate(dir string) error {
 			sb.WriteString(strings.Join(namingIssues, ", "))
 		}
 		return fmt.Errorf("%s", sb.String())
-	}
-	return nil
-}
-
-func dryRunSQL(db *gorm.DB, sql string) error {
-	stmts := strings.Split(sql, ";")
-	for _, stmt := range stmts {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue
-		}
-		if err := db.Exec(stmt).Error; err != nil {
-			return err
-		}
 	}
 	return nil
 }
