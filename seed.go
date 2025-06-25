@@ -17,6 +17,7 @@ type Seeder interface {
 // The file name is derived from the seeder type name in lower case with a .json
 // extension (e.g. Bookmark -> bookmark.json).
 func Seed(db *gorm.DB, dir string, seeders []Seeder) error {
+	_ = EnsureAuditTable(db)
 	for _, s := range seeders {
 		t := reflect.TypeOf(s)
 		if t.Kind() == reflect.Pointer {
@@ -27,6 +28,7 @@ func Seed(db *gorm.DB, dir string, seeders []Seeder) error {
 		if err := s.Seed(db, path); err != nil {
 			return err
 		}
+		LogAuditEvent(db, file, "seed")
 	}
 	return nil
 }
