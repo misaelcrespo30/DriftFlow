@@ -131,6 +131,50 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 	return nil
 }
 
+// DownSteps rolls back the most recent N migrations. If steps is less than 1
+// or greater than the number of applied migrations, all applied migrations are
+// rolled back.
+func DownSteps(db *gorm.DB, dir string, steps int) error {
+	if err := ensureMigrationsTable(db); err != nil {
+		return err
+	}
+	_ = EnsureAuditTable(db)
+	_, downs, err := readMigrationFiles(dir)
+	if err != nil {
+		return err
+	}
+	downMap := make(map[string]string)
+	for _, f := range downs {
+		downMap[migrationVersion(f)] = f
+	}
+	var applied []SchemaMigration
+	if err := db.Order("id desc").Find(&applied).Error; err != nil {
+		return err
+	}
+	if steps < 1 || steps > len(applied) {
+		steps = len(applied)
+	}
+	for i := 0; i < steps; i++ {
+		m := applied[i]
+		file, ok := downMap[m.Version]
+		if !ok {
+			return fmt.Errorf("missing down file for %s", m.Version)
+		}
+		sqlBytes, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		if err := db.Exec(string(sqlBytes)).Error; err != nil {
+			return fmt.Errorf("revert %s: %w", file, err)
+		}
+		if err := removeMigration(db, m.Version); err != nil {
+			return err
+		}
+		LogAuditEvent(db, m.Version, "rollback")
+	}
+	return nil
+}
+
 // GenerateMigrations is a placeholder for automatic generation.
 // GenerateMigrations inspects the database schema and writes migration files
 // for any new tables or columns found in the provided models. Only basic

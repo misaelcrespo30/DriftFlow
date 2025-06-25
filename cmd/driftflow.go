@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"text/tabwriter"
 	"time"
 
@@ -54,6 +55,27 @@ func main() {
 				return err
 			}
 			return driftflow.Down(db, migDir, args[0])
+		},
+	})
+
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "undo [n]",
+		Short: "Rollback the last n migrations (default 1)",
+		Args:  cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			steps := 1
+			if len(args) == 1 {
+				var err error
+				steps, err = strconv.Atoi(args[0])
+				if err != nil {
+					return err
+				}
+			}
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			return driftflow.DownSteps(db, migDir, steps)
 		},
 	})
 
