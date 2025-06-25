@@ -112,6 +112,44 @@ func main() {
 		},
 	})
 
+	var fromDSN, toDSN string
+	compareCmd := &cobra.Command{
+		Use:   "compare",
+		Short: "Compare schemas of two databases",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dbFrom, err := openDSN(fromDSN)
+			if err != nil {
+				return err
+			}
+			dbTo, err := openDSN(toDSN)
+			if err != nil {
+				return err
+			}
+			diffs, err := driftflow.CompareDBs(dbFrom, dbTo)
+			if err != nil {
+				return err
+			}
+			for _, d := range diffs {
+				switch {
+				case strings.HasPrefix(d, "[+]"):
+					fmt.Printf("\033[32m%s\033[0m\n", d)
+				case strings.HasPrefix(d, "[-]"):
+					fmt.Printf("\033[31m%s\033[0m\n", d)
+				case strings.HasPrefix(d, "[~]"):
+					fmt.Printf("\033[33m%s\033[0m\n", d)
+				default:
+					fmt.Println(d)
+				}
+			}
+			return nil
+		},
+	}
+	compareCmd.Flags().StringVar(&fromDSN, "from", "", "source DSN")
+	compareCmd.Flags().StringVar(&toDSN, "to", "", "target DSN")
+	_ = compareCmd.MarkFlagRequired("from")
+	_ = compareCmd.MarkFlagRequired("to")
+	rootCmd.AddCommand(compareCmd)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -129,4 +167,14 @@ func openDB() (*gorm.DB, error) {
 	default:
 		return nil, fmt.Errorf("unsupported driver: %s", driver)
 	}
+}
+
+func openDSN(d string) (*gorm.DB, error) {
+	if strings.HasPrefix(d, "postgres://") || strings.HasPrefix(d, "postgresql://") {
+		return gorm.Open(postgres.Open(d), &gorm.Config{})
+	}
+	if strings.HasPrefix(d, "mysql://") {
+		return gorm.Open(mysql.Open(d), &gorm.Config{})
+	}
+	return gorm.Open(sqlite.Open(d), &gorm.Config{})
 }
