@@ -29,6 +29,14 @@ type SchemaState struct {
 	Tables map[string]TableInfo
 }
 
+// State es un snapshot del estado completo de DriftFlow
+type State struct {
+	LocalVersions   []string
+	AppliedVersions []MigrationState
+	Schema          SchemaState
+	Files           []string
+}
+
 //
 // ========== Lectura de estado desde la base de datos ==========
 //
@@ -126,4 +134,38 @@ func IsMigrationApplied(version string, applied []MigrationState) bool {
 		}
 	}
 	return false
+}
+
+//
+// ========== Snapshot general del estado ==========
+//
+
+// LoadState construye un snapshot completo del estado actual
+func LoadState(db *gorm.DB, migrationsDir string) (State, error) {
+	applied, err := GetAppliedMigrations(db)
+	if err != nil {
+		return State{}, err
+	}
+
+	local, err := GetLocalMigrationVersions(migrationsDir)
+	if err != nil {
+		return State{}, err
+	}
+
+	files, err := filepath.Glob(filepath.Join(migrationsDir, "*.up.sql"))
+	if err != nil {
+		return State{}, err
+	}
+
+	// Para ahora dejamos Schema vacío, puedes extenderlo luego con introspección
+	schema := SchemaState{
+		Tables: make(map[string]TableInfo),
+	}
+
+	return State{
+		LocalVersions:   local,
+		AppliedVersions: applied,
+		Schema:          schema,
+		Files:           files,
+	}, nil
 }

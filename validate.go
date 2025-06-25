@@ -76,7 +76,7 @@ func Validate(dir string) error {
 			sb.WriteString("naming issues: ")
 			sb.WriteString(strings.Join(namingIssues, ", "))
 		}
-		return fmt.Errorf(sb.String())
+		return fmt.Errorf("%s", sb.String())
 	}
 	return nil
 }
