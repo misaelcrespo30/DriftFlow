@@ -2,28 +2,22 @@ package loader
 
 import (
 	"context"
-	"os"
-	"sort"
-	"strings"
+	"path/filepath"
 
+	"DriftFlow/config"
 	"DriftFlow/internal/state"
 )
 
-// Load reads migration files from the given directory and returns their state.
+// Load returns the migration state by reading `.sql` files from dir. If dir is
+// empty, it falls back to the `MIG_DIR` configuration loaded from the
+// environment.
 func Load(_ context.Context, dir string) (*state.State, error) {
-	entries, err := os.ReadDir(dir)
+	if dir == "" {
+		dir = config.Load().MigDir
+	}
+	files, err := filepath.Glob(filepath.Join(dir, "*.sql"))
 	if err != nil {
 		return nil, err
 	}
-	files := make([]string, 0, len(entries))
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		if strings.HasSuffix(e.Name(), ".sql") {
-			files = append(files, e.Name())
-		}
-	}
-	sort.Strings(files)
 	return &state.State{Files: files}, nil
 }
