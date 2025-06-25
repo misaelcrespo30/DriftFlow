@@ -119,14 +119,5 @@ func main() {
 }
 
 func openDB() (*gorm.DB, error) {
-	switch driver {
-	case "postgres":
-		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	case "sqlite":
-		return gorm.Open(sqlite.Open(dsn), &gorm.Config{})
-	case "mysql":
-		return gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	default:
-		return nil, fmt.Errorf("unsupported driver: %s", driver)
-	}
+	return driftflow.ConnectToDB(dsn, driver)
 }
