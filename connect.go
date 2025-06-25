@@ -7,6 +7,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 )
 
@@ -29,6 +30,8 @@ func ConnectToDB(dsn string, driver string) (*gorm.DB, error) {
 		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	case "mysql":
 		return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	case "sqlserver":
+		return gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
 	case "sqlite":
 		return gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	default:

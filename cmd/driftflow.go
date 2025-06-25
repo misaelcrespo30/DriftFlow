@@ -12,6 +12,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
 	driftflow "DriftFlow"
@@ -253,6 +254,9 @@ func openDSN(d string) (*gorm.DB, error) {
 	}
 	if strings.HasPrefix(d, "mysql://") {
 		return gorm.Open(mysql.Open(d), &gorm.Config{})
+	}
+	if strings.HasPrefix(d, "sqlserver://") {
+		return gorm.Open(sqlserver.Open(d), &gorm.Config{})
 	}
 	return gorm.Open(sqlite.Open(d), &gorm.Config{})
 }
