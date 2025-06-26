@@ -32,6 +32,11 @@ var (
 // external applications to run DriftFlow commands programmatically.
 func NewRootCommand() *cobra.Command {
 	cfg := config.Load()
+	dsn = cfg.DSN
+	driver = cfg.Driver
+	migDir = cfg.MigDir
+	seedDir = cfg.SeedDir
+
 	rootCmd := &cobra.Command{Use: "driftflow"}
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", cfg.DSN, "database DSN")
 	rootCmd.PersistentFlags().StringVar(&driver, "driver", cfg.Driver, "database driver")
