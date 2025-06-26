@@ -1,8 +1,7 @@
 # DriftFlow
 
-DriftFlow provides a lightweight CLI and library for managing database schema
-    migrations. It works independently from your main application and can be reused
-across different projects.
+DriftFlow provides a lightweight CLI and library for managing database schema migrations.
+It works independently from your main application and can be reused across different projects.
 
 The tool supports PostgreSQL, MySQL, SQLite, and SQL Server.
 
