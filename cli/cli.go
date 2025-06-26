@@ -17,13 +17,15 @@ import (
 
 	driftflow "github.com/misaelcrespo30/DriftFlow"
 	"github.com/misaelcrespo30/DriftFlow/config"
+	"github.com/misaelcrespo30/DriftFlow/helpers"
 )
 
 var (
-	dsn     string
-	driver  string
-	migDir  string
-	seedDir string
+	dsn       string
+	driver    string
+	migDir    string
+	seedDir   string
+	modelsDir string
 )
 
 // NewRootCommand builds the DriftFlow CLI root command. It can be used by
@@ -35,6 +37,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&driver, "driver", cfg.Driver, "database driver")
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
 	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
+	rootCmd.PersistentFlags().StringVar(&modelsDir, "models", cfg.ModelsDir, "models directory")
 
 	rootCmd.AddCommand(Commands...)
 
@@ -150,8 +153,10 @@ func newGenerateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("newGenerateCommand migDir=%s\n", migDir)
-			var models []interface{}
+			models, err := helpers.LoadModels(modelsDir)
+			if err != nil {
+				return err
+			}
 			return driftflow.GenerateMigrations(db, models, migDir)
 		},
 	}
@@ -166,7 +171,10 @@ func newMigrateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			var models []interface{}
+			models, err := helpers.LoadModels(modelsDir)
+			if err != nil {
+				return err
+			}
 			return driftflow.Migrate(db, migDir, models)
 		},
 	}
