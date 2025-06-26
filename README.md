@@ -30,6 +30,30 @@ driftflow validate   # validate migration directory
 The package also exposes a Go API for loading migration state and executing
 migrations programmatically.
 
+### Using the CLI programmatically
+
+Besides calling the binary directly you can execute DriftFlow commands from
+your own Go code. Import the `cli` package and run the root command with any
+arguments you need:
+
+```go
+package main
+
+import (
+    "log"
+
+    "github.com/misaelcrespo30/DriftFlow/cli"
+)
+
+func main() {
+    cmd := cli.NewRootCommand()
+    cmd.SetArgs([]string{"up"})
+    if err := cmd.Execute(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
 ### Environment
 
 DriftFlow loads configuration from environment variables or a `.env` file:
