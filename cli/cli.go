@@ -36,7 +36,53 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
 	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
 
-	rootCmd.AddCommand(&cobra.Command{
+	for _, cmd := range Commands() {
+		rootCmd.AddCommand(cmd)
+	}
+
+	return rootCmd
+}
+
+// Execute runs the DriftFlow CLI using the default configuration.
+func Execute() error {
+	return NewRootCommand().Execute()
+}
+
+func openDB() (*gorm.DB, error) {
+	return driftflow.ConnectToDB(dsn, driver)
+}
+
+func openDSN(d string) (*gorm.DB, error) {
+	if strings.HasPrefix(d, "postgres://") || strings.HasPrefix(d, "postgresql://") {
+		return gorm.Open(postgres.Open(d), &gorm.Config{})
+	}
+	if strings.HasPrefix(d, "mysql://") {
+		return gorm.Open(mysql.Open(d), &gorm.Config{})
+	}
+	if strings.HasPrefix(d, "sqlserver://") {
+		return gorm.Open(sqlserver.Open(d), &gorm.Config{})
+	}
+	return nil, fmt.Errorf("unsupported DSN: %s", d)
+}
+
+// Commands returns all DriftFlow CLI commands.
+func Commands() []*cobra.Command {
+	return []*cobra.Command{
+		newUpCommand(),
+		newDownCommand(),
+		newUndoCommand(),
+		newSeedCommand(),
+		newSeedgenCommand(),
+		newGenerateCommand(),
+		newMigrateCommand(),
+		newValidateCommand(),
+		newAuditCommand(),
+		newCompareCommand(),
+	}
+}
+
+func newUpCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "up",
 		Short: "Apply pending migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -46,9 +92,11 @@ func NewRootCommand() *cobra.Command {
 			}
 			return driftflow.Up(db, migDir)
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newDownCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "down [version]",
 		Short: "Rollback migrations after the given version",
 		Args:  cobra.ExactArgs(1),
@@ -59,9 +107,11 @@ func NewRootCommand() *cobra.Command {
 			}
 			return driftflow.Down(db, migDir, args[0])
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newUndoCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "undo [n]",
 		Short: "Rollback the last n migrations (default 1)",
 		Args:  cobra.RangeArgs(0, 1),
@@ -80,9 +130,11 @@ func NewRootCommand() *cobra.Command {
 			}
 			return driftflow.DownSteps(db, migDir, steps)
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newSeedCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "seed",
 		Short: "Execute JSON seed files",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -93,18 +145,22 @@ func NewRootCommand() *cobra.Command {
 			var seeders []driftflow.Seeder
 			return driftflow.Seed(db, seedDir, seeders)
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newSeedgenCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "seedgen",
 		Short: "Generate JSON seed templates from models",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var models []interface{}
 			return driftflow.GenerateSeedTemplates(models, seedDir)
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newGenerateCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "generate",
 		Short: "Generate migration files from models",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -115,9 +171,11 @@ func NewRootCommand() *cobra.Command {
 			var models []interface{}
 			return driftflow.GenerateMigrations(db, models, migDir)
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newMigrateCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "migrate",
 		Short: "Generate and apply migrations from models",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -128,22 +186,31 @@ func NewRootCommand() *cobra.Command {
 			var models []interface{}
 			return driftflow.Migrate(db, migDir, models)
 		},
-	})
+	}
+}
 
-	rootCmd.AddCommand(&cobra.Command{
+func newValidateCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "validate",
 		Short: "Validate migration files",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return driftflow.Validate(migDir)
 		},
-	})
+	}
+}
 
+func newAuditCommand() *cobra.Command {
 	auditCmd := &cobra.Command{
 		Use:   "audit",
 		Short: "Audit log commands",
 	}
+	auditCmd.AddCommand(newAuditListCommand())
+	auditCmd.AddCommand(newAuditExportCommand())
+	return auditCmd
+}
 
-	auditCmd.AddCommand(&cobra.Command{
+func newAuditListCommand() *cobra.Command {
+	return &cobra.Command{
 		Use:   "list",
 		Short: "List audit log entries",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -163,10 +230,12 @@ func NewRootCommand() *cobra.Command {
 			w.Flush()
 			return nil
 		},
-	})
+	}
+}
 
+func newAuditExportCommand() *cobra.Command {
 	var jsonOut bool
-	exportCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export audit log",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -195,12 +264,13 @@ func NewRootCommand() *cobra.Command {
 			return nil
 		},
 	}
-	exportCmd.Flags().BoolVar(&jsonOut, "json", false, "output as JSON")
-	auditCmd.AddCommand(exportCmd)
-	rootCmd.AddCommand(auditCmd)
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "output as JSON")
+	return cmd
+}
 
+func newCompareCommand() *cobra.Command {
 	var fromDSN, toDSN string
-	compareCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "compare",
 		Short: "Compare schemas of two databases",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -231,33 +301,9 @@ func NewRootCommand() *cobra.Command {
 			return nil
 		},
 	}
-	compareCmd.Flags().StringVar(&fromDSN, "from", "", "source DSN")
-	compareCmd.Flags().StringVar(&toDSN, "to", "", "target DSN")
-	_ = compareCmd.MarkFlagRequired("from")
-	_ = compareCmd.MarkFlagRequired("to")
-	rootCmd.AddCommand(compareCmd)
-
-	return rootCmd
-}
-
-// Execute runs the DriftFlow CLI using the default configuration.
-func Execute() error {
-	return NewRootCommand().Execute()
-}
-
-func openDB() (*gorm.DB, error) {
-	return driftflow.ConnectToDB(dsn, driver)
-}
-
-func openDSN(d string) (*gorm.DB, error) {
-	if strings.HasPrefix(d, "postgres://") || strings.HasPrefix(d, "postgresql://") {
-		return gorm.Open(postgres.Open(d), &gorm.Config{})
-	}
-	if strings.HasPrefix(d, "mysql://") {
-		return gorm.Open(mysql.Open(d), &gorm.Config{})
-	}
-	if strings.HasPrefix(d, "sqlserver://") {
-		return gorm.Open(sqlserver.Open(d), &gorm.Config{})
-	}
-	return nil, fmt.Errorf("unsupported DSN: %s", d)
+	cmd.Flags().StringVar(&fromDSN, "from", "", "source DSN")
+	cmd.Flags().StringVar(&toDSN, "to", "", "target DSN")
+	_ = cmd.MarkFlagRequired("from")
+	_ = cmd.MarkFlagRequired("to")
+	return cmd
 }
