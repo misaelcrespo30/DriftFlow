@@ -85,7 +85,7 @@
         <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750963940956" />
+              <option name="lastModified" value="1750974240624" />
             </ScannedPath>
           </value>
         </entry>
@@ -120,12 +120,33 @@
         <entry key="file://$PROJECT_DIR$/config/config.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750851466623" />
+              <option name="lastModified" value="1750969854143" />
               <option name="schema">
                 <list>
                   <option value="Config" />
                 </list>
               </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/config/config_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750969854144" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/config/env.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750974240625" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/config/env_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750974240625" />
             </ScannedPath>
           </value>
         </entry>
@@ -176,7 +197,7 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750819705670" />
+              <option name="lastModified" value="1750974240626" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
@@ -202,7 +223,7 @@
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750819705670" />
+              <option name="lastModified" value="1750969854145" />
             </ScannedPath>
           </value>
         </entry>
@@ -228,7 +249,7 @@
         <entry key="file://$PROJECT_DIR$/validate.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750851466630" />
+              <option name="lastModified" value="1750969854146" />
             </ScannedPath>
           </value>
         </entry>

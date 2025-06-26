@@ -36,20 +36,20 @@ your own Go code. Import the `cli` package and run the root command with any
 arguments you need:
 
 ```go
-package main
+//package main
 
-import (
-    "log"
+//import (
+//    "log"
 
-    "github.com/misaelcrespo30/DriftFlow/cli"
-)
+//    "github.com/misaelcrespo30/DriftFlow/cli"
+//)
 
-func main() {
-    cmd := cli.NewRootCommand()
-    cmd.SetArgs([]string{"up"})
-    if err := cmd.Execute(); err != nil {
-        log.Fatal(err)
-    }
+//func main() {
+ //   cmd := cli.NewRootCommand()
+ //   cmd.SetArgs([]string{"up"})
+ //   if err := cmd.Execute(); err != nil {
+ //       log.Fatal(err)
+ //   }
 }
 ```
 
@@ -76,9 +76,9 @@ You can provide generator functions to populate template values when using
 `GenerateSeedTemplatesWithData`:
 
 ```go
-gens := map[string]func() interface{}{
-    "name": func() interface{} { return "Alice" },
-    "age":  func() interface{} { return 30 },
-}
-driftflow.GenerateSeedTemplatesWithData([]interface{}{User{}}, "seeds", gens)
+//gens := map[string]func() interface{}{
+//    "name": func() interface{} { return "Alice" },
+//    "age":  func() interface{} { return 30 },
+//}
+//driftflow.GenerateSeedTemplatesWithData([]interface{}{User{}}, "seeds", gens)
 ```
