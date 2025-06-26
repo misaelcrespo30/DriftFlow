@@ -36,7 +36,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
 	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
 
-	for _, cmd := range Commands() {
+	for _, cmd := range Commands {
 		rootCmd.AddCommand(cmd)
 	}
 
@@ -63,22 +63,6 @@ func openDSN(d string) (*gorm.DB, error) {
 		return gorm.Open(sqlserver.Open(d), &gorm.Config{})
 	}
 	return nil, fmt.Errorf("unsupported DSN: %s", d)
-}
-
-// Commands returns all DriftFlow CLI commands.
-func Commands() []*cobra.Command {
-	return []*cobra.Command{
-		newUpCommand(),
-		newDownCommand(),
-		newUndoCommand(),
-		newSeedCommand(),
-		newSeedgenCommand(),
-		newGenerateCommand(),
-		newMigrateCommand(),
-		newValidateCommand(),
-		newAuditCommand(),
-		newCompareCommand(),
-	}
 }
 
 func newUpCommand() *cobra.Command {
