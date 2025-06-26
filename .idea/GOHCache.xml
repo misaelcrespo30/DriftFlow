@@ -3,13 +3,6 @@
   <component name="GoORMHelperCache">
     <option name="schemaMapping">
       <map>
-        <entry key="AuditLog">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/audit.go" />
-            </set>
-          </value>
-        </entry>
         <entry key="Config">
           <value>
             <set>
@@ -59,24 +52,10 @@
             </set>
           </value>
         </entry>
-        <entry key="mockSeeder">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/seed_test.go" />
-            </set>
-          </value>
-        </entry>
         <entry key="result">
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/internal/state/state.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="schemaUser">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/schema_test.go" />
             </set>
           </value>
         </entry>
@@ -103,24 +82,24 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/audit_test.go">
+        <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750815116651" />
+              <option name="lastModified" value="1750963940956" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/cli/registry.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750963940956" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/cmd/driftflow.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750874897951" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/cmd/schemaflow.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750801567527" />
+              <option name="lastModified" value="1750954741409" />
             </ScannedPath>
           </value>
         </entry>
@@ -157,38 +136,10 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/connect_test.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750815116654" />
-            </ScannedPath>
-          </value>
-        </entry>
         <entry key="file://$PROJECT_DIR$/helpers/helpers.go">
           <value>
             <ScannedPath>
               <option name="lastModified" value="1750810675942" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/diff/diff.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750797925679" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/executor/executor.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750797925679" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/generator/generator.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750797925689" />
             </ScannedPath>
           </value>
         </entry>
@@ -234,13 +185,6 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/migrations_test.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750803381796" />
-            </ScannedPath>
-          </value>
-        </entry>
         <entry key="file://$PROJECT_DIR$/schema.go">
           <value>
             <ScannedPath>
@@ -255,41 +199,10 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/schema_test.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750815116660" />
-              <option name="schema">
-                <list>
-                  <option value="schemaUser" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/schemaflow.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750797925689" />
-            </ScannedPath>
-          </value>
-        </entry>
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
               <option name="lastModified" value="1750819705670" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/seed_test.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750810675945" />
-              <option name="schema">
-                <list>
-                  <option value="mockSeeder" />
-                </list>
-              </option>
             </ScannedPath>
           </value>
         </entry>
@@ -330,20 +243,17 @@
     </option>
     <option name="tableStructMapping">
       <map>
-        <entry key="audit_log" value="AuditLog" />
         <entry key="config" value="Config" />
         <entry key="migration_state" value="MigrationState" />
-        <entry key="mock_seeder" value="mockSeeder" />
         <entry key="result" value="result" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
         <entry key="schema_state" value="SchemaState" />
-        <entry key="schema_user" value="schemaUser" />
         <entry key="state" value="State" />
         <entry key="table_info" value="TableInfo" />
         <entry key="tmpl_model" value="tmplModel" />
       </map>
     </option>
-    <option name="lastTimeChecked" value="1750801594952" />
+    <option name="lastTimeChecked" value="1750949369570" />
   </component>
 </project>
