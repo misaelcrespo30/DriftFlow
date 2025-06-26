@@ -93,3 +93,29 @@ func loadEnvFile() error {
 	}
 	return nil
 }
+
+// ValidateDir checks that dir exists and is a directory.
+func ValidateDir(dir string) error {
+	info, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", dir)
+		}
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("not a directory: %s", dir)
+	}
+	return nil
+}
+
+// ValidateDirs verifies that both migration and seed directories exist.
+func ValidateDirs(migDir, seedDir string) error {
+	if err := ValidateDir(migDir); err != nil {
+		return err
+	}
+	if err := ValidateDir(seedDir); err != nil {
+		return err
+	}
+	return nil
+}

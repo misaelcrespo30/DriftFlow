@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
+
+	"github.com/misaelcrespo30/DriftFlow/config"
 )
 
 // Seeder defines a type that can seed itself using a JSON file.
@@ -17,6 +19,9 @@ type Seeder interface {
 // The file name is derived from the seeder type name in lower case with a .json
 // extension (e.g. Bookmark -> bookmark.json).
 func Seed(db *gorm.DB, dir string, seeders []Seeder) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
 	_ = EnsureAuditTable(db)
 	for _, s := range seeders {
 		t := reflect.TypeOf(s)
