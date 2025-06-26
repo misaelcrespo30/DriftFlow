@@ -65,6 +65,10 @@ to the default file bundled with the library if none is found:
 - `MIG_DIR` specifies where `.sql` migration files live (default `migrations`).
 - `SEED_DIR` specifies where JSON seed files live (default `seeds`). Both directories must exist when running migrations or seeds.
 
+If no `.env` file exists, `config.EnsureEnvFile` will create one using the
+defaults in `config.defaultEnv`. When a file is present but missing any of these
+keys, they are appended automatically with their default values.
+
 `loader.Load` uses the `MIG_DIR` value when called without a directory.
 
 ### Dynamic seed templates
