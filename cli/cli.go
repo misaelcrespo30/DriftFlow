@@ -36,9 +36,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
 	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
 
-	for _, cmd := range Commands {
-		rootCmd.AddCommand(cmd)
-	}
+	rootCmd.AddCommand(Commands...)
 
 	return rootCmd
 }
