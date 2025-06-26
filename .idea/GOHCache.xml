@@ -120,7 +120,7 @@
         <entry key="file://$PROJECT_DIR$/config/config.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750969854143" />
+              <option name="lastModified" value="1750979464132" />
               <option name="schema">
                 <list>
                   <option value="Config" />
@@ -139,7 +139,7 @@
         <entry key="file://$PROJECT_DIR$/config/env.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750974240625" />
+              <option name="lastModified" value="1750979464132" />
             </ScannedPath>
           </value>
         </entry>
@@ -161,6 +161,13 @@
           <value>
             <ScannedPath>
               <option name="lastModified" value="1750810675942" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/helpers/model_loader.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750979464133" />
             </ScannedPath>
           </value>
         </entry>
