@@ -16,6 +16,7 @@ var defaultEnv = map[string]string{
 	"DB_SSLMODE":  "disable",
 	"MIG_DIR":     "migrations",
 	"SEED_DIR":    "seeds",
+	"MODELS_DIR":  "models",
 }
 
 var defaultEnvOrder = []string{
@@ -29,6 +30,7 @@ var defaultEnvOrder = []string{
 	"DB_SSLMODE",
 	"MIG_DIR",
 	"SEED_DIR",
+	"MODELS_DIR",
 }
 
 var defaultEnvContent = buildDefaultEnvContent()

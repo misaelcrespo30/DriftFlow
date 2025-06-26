@@ -63,6 +63,7 @@ to the default file bundled with the library if none is found:
 - `DSN` provides the full database connection string. When not set, a DSN is assembled from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_SSLMODE`.
 - `MIG_DIR` specifies where `.sql` migration files live (default `migrations`).
 - `SEED_DIR` specifies where JSON seed files live (default `seeds`). Both directories must exist when running migrations or seeds.
+- `MODELS_DIR` sets the directory containing Go model definitions used to generate migrations (default `models`).
 
 If no `.env` file exists, `config.EnsureEnvFile` will create one using the
 defaults in `config.defaultEnv`. When a file is present but missing any of these
