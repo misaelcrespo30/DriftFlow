@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -20,7 +22,7 @@ type Config struct {
 // returns a Config struct. If DSN is not provided directly, it will be
 // constructed from standard database variables.
 func Load() *Config {
-	_ = godotenv.Load()
+	_ = loadEnvFile()
 
 	driver := getEnvOrDefault("DB_TYPE", "postgres")
 	cfg := &Config{
@@ -64,4 +66,30 @@ func buildDSN(driver string) string {
 	default:
 		return ""
 	}
+}
+
+// loadEnvFile searches for a .env file in the working directory and its parents.
+// If none is found, it falls back to the default .env bundled with the library.
+func loadEnvFile() error {
+	wd, err := os.Getwd()
+	if err == nil {
+		dir := wd
+		for {
+			path := filepath.Join(dir, ".env")
+			if _, err := os.Stat(path); err == nil {
+				return godotenv.Load(path)
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+
+	if _, file, _, ok := runtime.Caller(0); ok {
+		repoRoot := filepath.Join(filepath.Dir(file), "..")
+		return godotenv.Load(filepath.Join(repoRoot, ".env"))
+	}
+	return nil
 }
