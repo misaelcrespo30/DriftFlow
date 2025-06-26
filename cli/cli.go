@@ -150,6 +150,7 @@ func newGenerateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			fmt.Printf("newGenerateCommand migDir=%s\n", migDir)
 			var models []interface{}
 			return driftflow.GenerateMigrations(db, models, migDir)
 		},

@@ -191,6 +191,7 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 // for any new tables or columns found in the provided models. Only basic
 // additions are handled.
 func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
+	fmt.Printf("GenerateMigrations dir=%s\n", dir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
