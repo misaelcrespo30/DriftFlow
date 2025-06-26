@@ -56,7 +56,9 @@ func main() {
 
 ### Environment
 
-DriftFlow loads configuration from environment variables or a `.env` file:
+DriftFlow loads configuration from environment variables or a `.env` file. The
+loader searches the working directory and its parents for `.env`, falling back
+to the default file bundled with the library if none is found:
 
 - `DB_TYPE` sets the database driver (`postgres`, `mysql`, `sqlserver`). Defaults to `postgres`.
 - `DSN` provides the full database connection string. When not set, a DSN is assembled from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_SSLMODE`.
