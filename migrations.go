@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/misaelcrespo30/DriftFlow/config"
 )
 
 // SchemaMigration represents a row in the schema_migrations table.
@@ -58,6 +60,9 @@ func removeMigration(db *gorm.DB, version string) error {
 
 // Up applies all pending migrations found in dir.
 func Up(db *gorm.DB, dir string) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
@@ -92,6 +97,9 @@ func Up(db *gorm.DB, dir string) error {
 
 // Down rolls back migrations until targetVersion is reached.
 func Down(db *gorm.DB, dir string, targetVersion string) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
@@ -135,6 +143,9 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 // or greater than the number of applied migrations, all applied migrations are
 // rolled back.
 func DownSteps(db *gorm.DB, dir string, steps int) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}

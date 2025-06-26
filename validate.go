@@ -6,11 +6,16 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/misaelcrespo30/DriftFlow/config"
 )
 
 // Validate checks migration files for common issues such as duplicated names
 // or missing down migration files.
 func Validate(dir string) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
