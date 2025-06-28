@@ -177,15 +177,11 @@ func newGenerateCommand() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate migration files from models",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := openDB()
-			if err != nil {
-				return err
-			}
 			models, err := helpers.LoadModels()
 			if err != nil {
 				return err
 			}
-			return driftflow.GenerateMigrations(db, models, migDir)
+			return driftflow.GenerateModelMigrations(models, migDir)
 		},
 	}
 }
