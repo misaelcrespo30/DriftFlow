@@ -22,6 +22,10 @@ type SchemaMigration struct {
 	AppliedAt time.Time `gorm:"autoCreateTime"`
 }
 
+func (SchemaMigration) TableName() string {
+	return "migrations_history"
+}
+
 // ensureMigrationsTable creates the schema_migrations table if it does not exist.
 func ensureMigrationsTable(db *gorm.DB) error {
 	return db.AutoMigrate(&SchemaMigration{})
