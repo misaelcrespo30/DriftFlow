@@ -263,7 +263,7 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 		table := stmt.Schema.Table
 		var cols []string
 		for _, f := range stmt.Schema.Fields {
-			if f.Hidden {
+			if f.DBName == "" || f.IgnoreMigration {
 				continue
 			}
 			name := f.DBName
