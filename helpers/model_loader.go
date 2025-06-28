@@ -30,12 +30,20 @@ func LoadModels(dir string) ([]interface{}, error) {
 		return nil, fmt.Errorf("Models function not found")
 	}
 
-	i := interp.New(interp.Config{}, prog)
-	v, err := i.Eval(modelsFn)
+	// Create a new interpreter instance with the updated API. In recent
+	// versions the configuration struct was renamed to Options and the
+	// constructor is NewInterpreter rather than New.
+	i := interp.NewInterpreter(prog, &interp.Options{})
+
+	// Execute the function using Call which replaces the old Eval method.
+	v, err := i.Call(modelsFn)
 	if err != nil {
 		return nil, err
 	}
-	if res, ok := v.Interface().([]interface{}); ok {
+
+	// The returned value no longer exposes Interface directly. Instead we
+	// obtain the Go value using ToInterface.
+	if res, ok := v.ToInterface().([]interface{}); ok {
 		return res, nil
 	}
 	return nil, fmt.Errorf("invalid Models return type")
