@@ -116,6 +116,32 @@ func sqlTypeOf(t reflect.Type) string {
 	}
 }
 
+// modelsSchema builds a schemaInfo map from the provided models.
+func modelsSchema(db *gorm.DB, models []interface{}) (schemaInfo, error) {
+	s := make(schemaInfo)
+	for _, m := range models {
+		stmt := &gorm.Statement{DB: db}
+		if err := stmt.Parse(m); err != nil {
+			return nil, err
+		}
+		cols := make(tableInfo)
+		for _, f := range stmt.Schema.Fields {
+			if f.DBName == "" || f.IgnoreMigration {
+				continue
+			}
+			name := f.DBName
+			if name == "" {
+				name = toSnakeCase(f.Name)
+			}
+			cols[name] = sqlTypeOf(f.FieldType)
+		}
+		if len(cols) > 0 {
+			s[stmt.Schema.Table] = cols
+		}
+	}
+	return s, nil
+}
+
 // Up applies all pending migrations found in dir.
 func Up(db *gorm.DB, dir string) error {
 	if err := config.ValidateDir(dir); err != nil {
@@ -254,46 +280,83 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 		return err
 	}
 
-	for i, m := range models {
-		stmt := &gorm.Statement{DB: db}
-		if err := stmt.Parse(m); err != nil {
-			return err
-		}
+	dbSchema, err := schemaMap(db)
+	if err != nil {
+		return err
+	}
 
-		table := stmt.Schema.Table
-		var cols []string
-		for _, f := range stmt.Schema.Fields {
-			if f.DBName == "" || f.IgnoreMigration {
-				continue
-			}
-			name := f.DBName
-			if name == "" {
-				name = toSnakeCase(f.Name)
-			}
-			cols = append(cols, fmt.Sprintf("%s %s", name, sqlTypeOf(f.FieldType)))
-		}
-		if len(cols) == 0 {
-			continue
-		}
+	modelSchema, err := modelsSchema(db, models)
+	if err != nil {
+		return err
+	}
 
-		upSQL := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);\n", table, strings.Join(cols, ",\n  "))
-		downSQL := fmt.Sprintf("DROP TABLE %s;\n", table)
+	diffs := diffSchemas(dbSchema, modelSchema)
+	if len(diffs) == 0 {
+		return nil
+	}
 
-		timestamp := time.Now().UTC().Add(time.Duration(i) * time.Second).Format("20060102150405")
-		prefix := fmt.Sprintf("%s_%s", timestamp, table)
-		upPath := filepath.Join(dir, prefix+".up.sql")
-		downPath := filepath.Join(dir, prefix+".down.sql")
-		if _, err := os.Stat(upPath); os.IsNotExist(err) {
-			if err := os.WriteFile(upPath, []byte(upSQL), 0o644); err != nil {
-				return err
+	var upStmts, downStmts []string
+	for _, d := range diffs {
+		switch {
+		case strings.HasPrefix(d, "[+] table "):
+			tbl := strings.TrimPrefix(d, "[+] table ")
+			cols := modelSchema[tbl]
+			var defs []string
+			for c, t := range cols {
+				defs = append(defs, fmt.Sprintf("%s %s", c, t))
 			}
-		}
-		if _, err := os.Stat(downPath); os.IsNotExist(err) {
-			if err := os.WriteFile(downPath, []byte(downSQL), 0o644); err != nil {
-				return err
+			sort.Strings(defs)
+			upStmts = append(upStmts, fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", tbl, strings.Join(defs, ",\n  ")))
+			downStmts = append(downStmts, fmt.Sprintf("DROP TABLE %s;", tbl))
+		case strings.HasPrefix(d, "[-] table "):
+			tbl := strings.TrimPrefix(d, "[-] table ")
+			cols := dbSchema[tbl]
+			var defs []string
+			for c, t := range cols {
+				defs = append(defs, fmt.Sprintf("%s %s", c, t))
 			}
+			sort.Strings(defs)
+			upStmts = append(upStmts, fmt.Sprintf("DROP TABLE %s;", tbl))
+			downStmts = append(downStmts, fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", tbl, strings.Join(defs, ",\n  ")))
+		case strings.HasPrefix(d, "[+] column "):
+			rest := strings.TrimPrefix(d, "[+] column ")
+			parts := strings.Split(rest, ".")
+			tbl, col := parts[0], parts[1]
+			typ := modelSchema[tbl][col]
+			upStmts = append(upStmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", tbl, col, typ))
+			downStmts = append(downStmts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", tbl, col))
+		case strings.HasPrefix(d, "[-] column "):
+			rest := strings.TrimPrefix(d, "[-] column ")
+			parts := strings.Split(rest, ".")
+			tbl, col := parts[0], parts[1]
+			typ := dbSchema[tbl][col]
+			upStmts = append(upStmts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", tbl, col))
+			downStmts = append(downStmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", tbl, col, typ))
+		case strings.HasPrefix(d, "[~] column "):
+			rest := strings.TrimPrefix(d, "[~] column ")
+			parts := strings.Split(rest, " ")
+			tblCol := parts[0]
+			fromType := parts[1]
+			toType := parts[3]
+			tp := strings.Split(tblCol, ".")
+			tbl, col := tp[0], tp[1]
+			upStmts = append(upStmts, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", tbl, col, toType))
+			downStmts = append(downStmts, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", tbl, col, fromType))
 		}
 	}
+
+	timestamp := time.Now().UTC().Format("20060102150405")
+	prefix := fmt.Sprintf("%s_auto", timestamp)
+	upPath := filepath.Join(dir, prefix+".up.sql")
+	downPath := filepath.Join(dir, prefix+".down.sql")
+
+	if err := os.WriteFile(upPath, []byte(strings.Join(upStmts, "\n")+"\n"), 0o644); err != nil {
+		return err
+	}
+	if err := os.WriteFile(downPath, []byte(strings.Join(downStmts, "\n")+"\n"), 0o644); err != nil {
+		return err
+	}
+
 	return nil
 }
 
