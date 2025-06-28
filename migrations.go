@@ -155,6 +155,7 @@ func Up(db *gorm.DB, dir string) error {
 		return err
 	}
 	_ = EnsureAuditTable(db)
+	_ = EnsureFieldHistoryTable(db)
 	ups, _, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
@@ -192,6 +193,7 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 		return err
 	}
 	_ = EnsureAuditTable(db)
+	_ = EnsureFieldHistoryTable(db)
 	_, downs, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
@@ -238,6 +240,7 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 		return err
 	}
 	_ = EnsureAuditTable(db)
+	_ = EnsureFieldHistoryTable(db)
 	_, downs, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
@@ -281,6 +284,9 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 	fmt.Printf("GenerateMigrations dir=%s\n", dir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	if err := EnsureFieldHistoryTable(db); err != nil {
 		return err
 	}
 
@@ -425,6 +431,26 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 		}
 		if err := os.WriteFile(downPath, []byte(downSQL+"\n"), 0o644); err != nil {
 			return err
+		}
+
+		for col, typ := range ch.add {
+			logFieldAdd(db, name, tbl, col, typ)
+		}
+		for col, typ := range ch.remove {
+			logFieldRemove(db, name, tbl, col, typ)
+		}
+		for _, a := range ch.alters {
+			logFieldAlter(db, name, tbl, a.col, a.from, a.to)
+		}
+		if ch.create {
+			for col, typ := range modelSchema[tbl] {
+				logFieldAdd(db, name, tbl, col, typ)
+			}
+		}
+		if ch.drop {
+			for col, typ := range dbSchema[tbl] {
+				logFieldRemove(db, name, tbl, col, typ)
+			}
 		}
 	}
 
