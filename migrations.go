@@ -279,7 +279,8 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 		upSQL := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);\n", table, strings.Join(cols, ",\n  "))
 		downSQL := fmt.Sprintf("DROP TABLE %s;\n", table)
 
-		prefix := fmt.Sprintf("%04d_%s", i+1, table)
+		timestamp := time.Now().UTC().Add(time.Duration(i) * time.Second).Format("20060102150405")
+		prefix := fmt.Sprintf("%s_%s", timestamp, table)
 		upPath := filepath.Join(dir, prefix+".up.sql")
 		downPath := filepath.Join(dir, prefix+".down.sql")
 		if _, err := os.Stat(upPath); os.IsNotExist(err) {

@@ -26,6 +26,12 @@ driftflow seedgen    # generate JSON seed templates
 driftflow validate   # validate migration directory
 ```
 
+### Migration file naming
+
+Generated migrations use a timestamp prefix similar to other frameworks. Files
+are created as `YYYYMMDDHHMMSS_table.up.sql` and `YYYYMMDDHHMMSS_table.down.sql`.
+This keeps migrations ordered chronologically and simplifies rollbacks.
+
 The package also exposes a Go API for loading migration state and executing
 migrations programmatically.
 
