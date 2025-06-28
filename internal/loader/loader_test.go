@@ -56,3 +56,26 @@ func TestLoad_Env(t *testing.T) {
 		t.Fatalf("expected %v, got %v", want, st.Files)
 	}
 }
+
+func TestLoad_MigrationsPath(t *testing.T) {
+	dir := t.TempDir()
+	names := []string{"x.sql"}
+	for _, n := range names {
+		if err := os.WriteFile(filepath.Join(dir, n), []byte{}, 0644); err != nil {
+			t.Fatalf("write %s: %v", n, err)
+		}
+	}
+
+	old := os.Getenv("MIGRATIONS_PATH")
+	t.Setenv("MIGRATIONS_PATH", dir)
+	defer os.Setenv("MIGRATIONS_PATH", old)
+
+	st, err := Load(context.Background(), "")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	want := []string{filepath.Join(dir, "x.sql")}
+	if !reflect.DeepEqual(st.Files, want) {
+		t.Fatalf("expected %v, got %v", want, st.Files)
+	}
+}

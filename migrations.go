@@ -22,6 +22,10 @@ type SchemaMigration struct {
 	AppliedAt time.Time `gorm:"autoCreateTime"`
 }
 
+func (SchemaMigration) TableName() string {
+	return "migrations_history"
+}
+
 // ensureMigrationsTable creates the schema_migrations table if it does not exist.
 func ensureMigrationsTable(db *gorm.DB) error {
 	return db.AutoMigrate(&SchemaMigration{})
@@ -295,14 +299,77 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 		return nil
 	}
 
-	now := time.Now().UTC()
-	for i, d := range diffs {
-		ts := now.Add(time.Duration(i) * time.Second).Format("2006_01_02_150405")
-		var name, upSQL, downSQL string
+	type alter struct {
+		col  string
+		from string
+		to   string
+	}
+	type change struct {
+		create bool
+		drop   bool
+		add    map[string]string
+		remove map[string]string
+		alters []alter
+	}
 
+	tblChanges := make(map[string]*change)
+	getChange := func(tbl string) *change {
+		c, ok := tblChanges[tbl]
+		if !ok {
+			c = &change{add: map[string]string{}, remove: map[string]string{}}
+			tblChanges[tbl] = c
+		}
+		return c
+	}
+
+	for _, d := range diffs {
 		switch {
 		case strings.HasPrefix(d, "[+] table "):
 			tbl := strings.TrimPrefix(d, "[+] table ")
+			c := getChange(tbl)
+			c.create = true
+		case strings.HasPrefix(d, "[-] table "):
+			tbl := strings.TrimPrefix(d, "[-] table ")
+			c := getChange(tbl)
+			c.drop = true
+		case strings.HasPrefix(d, "[+] column "):
+			rest := strings.TrimPrefix(d, "[+] column ")
+			parts := strings.Split(rest, ".")
+			tbl, col := parts[0], parts[1]
+			c := getChange(tbl)
+			c.add[col] = modelSchema[tbl][col]
+		case strings.HasPrefix(d, "[-] column "):
+			rest := strings.TrimPrefix(d, "[-] column ")
+			parts := strings.Split(rest, ".")
+			tbl, col := parts[0], parts[1]
+			c := getChange(tbl)
+			c.remove[col] = dbSchema[tbl][col]
+		case strings.HasPrefix(d, "[~] column "):
+			rest := strings.TrimPrefix(d, "[~] column ")
+			parts := strings.Split(rest, " ")
+			tblCol := parts[0]
+			fromType := parts[1]
+			toType := parts[3]
+			tp := strings.Split(tblCol, ".")
+			tbl, col := tp[0], tp[1]
+			c := getChange(tbl)
+			c.alters = append(c.alters, alter{col: col, from: fromType, to: toType})
+		}
+	}
+
+	if len(tblChanges) == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	i := 0
+	for tbl, ch := range tblChanges {
+		ts := now.Add(time.Duration(i) * time.Second).Format("2006_01_02_150405")
+		i++
+		var name, upSQL, downSQL string
+
+		switch {
+		case ch.create:
 			cols := modelSchema[tbl]
 			var defs []string
 			for c, t := range cols {
@@ -313,8 +380,7 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 			downSQL = fmt.Sprintf("DROP TABLE %s;", tbl)
 			name = fmt.Sprintf("%s_create_%s_table", ts, tbl)
 
-		case strings.HasPrefix(d, "[-] table "):
-			tbl := strings.TrimPrefix(d, "[-] table ")
+		case ch.drop:
 			cols := dbSchema[tbl]
 			var defs []string
 			for c, t := range cols {
@@ -325,35 +391,26 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 			downSQL = fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", tbl, strings.Join(defs, ",\n  "))
 			name = fmt.Sprintf("%s_drop_%s_table", ts, tbl)
 
-		case strings.HasPrefix(d, "[+] column "):
-			rest := strings.TrimPrefix(d, "[+] column ")
-			parts := strings.Split(rest, ".")
-			tbl, col := parts[0], parts[1]
-			typ := modelSchema[tbl][col]
-			upSQL = fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", tbl, col, typ)
-			downSQL = fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", tbl, col)
-			name = fmt.Sprintf("%s_add_%s_to_%s_table", ts, col, tbl)
-
-		case strings.HasPrefix(d, "[-] column "):
-			rest := strings.TrimPrefix(d, "[-] column ")
-			parts := strings.Split(rest, ".")
-			tbl, col := parts[0], parts[1]
-			typ := dbSchema[tbl][col]
-			upSQL = fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", tbl, col)
-			downSQL = fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", tbl, col, typ)
-			name = fmt.Sprintf("%s_remove_%s_from_%s_table", ts, col, tbl)
-
-		case strings.HasPrefix(d, "[~] column "):
-			rest := strings.TrimPrefix(d, "[~] column ")
-			parts := strings.Split(rest, " ")
-			tblCol := parts[0]
-			fromType := parts[1]
-			toType := parts[3]
-			tp := strings.Split(tblCol, ".")
-			tbl, col := tp[0], tp[1]
-			upSQL = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", tbl, col, toType)
-			downSQL = fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", tbl, col, fromType)
-			name = fmt.Sprintf("%s_alter_%s_%s_type", ts, tbl, col)
+		default:
+			var upParts, downParts []string
+			for col, typ := range ch.add {
+				upParts = append(upParts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", tbl, col, typ))
+				downParts = append([]string{fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", tbl, col)}, downParts...)
+			}
+			for col, typ := range ch.remove {
+				upParts = append(upParts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", tbl, col))
+				downParts = append([]string{fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", tbl, col, typ)}, downParts...)
+			}
+			for _, a := range ch.alters {
+				upParts = append(upParts, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", tbl, a.col, a.to))
+				downParts = append([]string{fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", tbl, a.col, a.from)}, downParts...)
+			}
+			if len(upParts) == 0 {
+				continue
+			}
+			upSQL = strings.Join(upParts, "\n")
+			downSQL = strings.Join(downParts, "\n")
+			name = fmt.Sprintf("%s_alter_%s_table", ts, tbl)
 		}
 
 		if name == "" {

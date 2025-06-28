@@ -26,10 +26,15 @@ func Load() *Config {
 	_ = loadEnvFile()
 
 	driver := getEnvOrDefault("DB_TYPE", "postgres")
+	migPath := os.Getenv("MIGRATIONS_PATH")
+	if migPath == "" {
+		migPath = getEnvOrDefault("MIG_DIR", "migrations")
+	}
+
 	cfg := &Config{
 		DSN:       os.Getenv("DSN"),
 		Driver:    driver,
-		MigDir:    getEnvOrDefault("MIG_DIR", "migrations"),
+		MigDir:    migPath,
 		SeedDir:   getEnvOrDefault("SEED_DIR", "seeds"),
 		ModelsDir: getEnvOrDefault("MODELS_DIR", "models"),
 	}

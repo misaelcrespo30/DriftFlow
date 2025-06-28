@@ -21,6 +21,7 @@ driftflow migrate    # generate migrations and apply them
 driftflow up         # apply pending migrations
 driftflow down NAME  # rollback to a migration
 driftflow undo [n]   # rollback the last n migrations (default 1)
+driftflow rollback [n] # alias of undo
 driftflow seed       # execute JSON seed files
 driftflow seedgen    # generate JSON seed templates
 driftflow validate   # validate migration directory
@@ -67,7 +68,7 @@ to the default file bundled with the library if none is found:
 
 - `DB_TYPE` sets the database driver (`postgres`, `mysql`, `sqlserver`). Defaults to `postgres`.
 - `DSN` provides the full database connection string. When not set, a DSN is assembled from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_SSLMODE`.
-- `MIG_DIR` specifies where `.sql` migration files live (default `migrations`).
+- `MIG_DIR` (or `MIGRATIONS_PATH`) specifies where `.sql` migration files live (default `migrations`). When both are set, `MIGRATIONS_PATH` takes precedence.
 - `SEED_DIR` specifies where JSON seed files live (default `seeds`). Both directories must exist when running migrations or seeds.
 - `MODELS_DIR` sets the directory containing Go model definitions used to generate migrations (default `models`).
 
@@ -75,7 +76,7 @@ If no `.env` file exists, `config.EnsureEnvFile` will create one using the
 defaults in `config.defaultEnv`. When a file is present but missing any of these
 keys, they are appended automatically with their default values.
 
-`loader.Load` uses the `MIG_DIR` value when called without a directory.
+`loader.Load` uses the `MIG_DIR` (or `MIGRATIONS_PATH`) value when called without a directory.
 
 ### Dynamic seed templates
 

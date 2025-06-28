@@ -6,6 +6,7 @@ var Commands = []*cobra.Command{
 	newUpCommand(),
 	newDownCommand(),
 	newUndoCommand(),
+	newRollbackCommand(),
 	newSeedCommand(),
 	newSeedgenCommand(),
 	newGenerateCommand(),
