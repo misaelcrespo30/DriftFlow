@@ -9,7 +9,7 @@ import (
 type FieldHistory struct {
 	ID         uint `gorm:"primaryKey"`
 	Version    string
-	TableName  string
+	Table      string
 	ColumnName string
 	OldType    string
 	NewType    string
@@ -26,16 +26,16 @@ func EnsureFieldHistoryTable(db *gorm.DB) error {
 }
 
 func logFieldAdd(db *gorm.DB, version, table, column, newType string) {
-	entry := FieldHistory{Version: version, TableName: table, ColumnName: column, NewType: newType}
+	entry := FieldHistory{Version: version, Table: table, ColumnName: column, NewType: newType}
 	_ = db.Create(&entry).Error
 }
 
 func logFieldRemove(db *gorm.DB, version, table, column, oldType string) {
-	entry := FieldHistory{Version: version, TableName: table, ColumnName: column, OldType: oldType}
+	entry := FieldHistory{Version: version, Table: table, ColumnName: column, OldType: oldType}
 	_ = db.Create(&entry).Error
 }
 
 func logFieldAlter(db *gorm.DB, version, table, column, fromType, toType string) {
-	entry := FieldHistory{Version: version, TableName: table, ColumnName: column, OldType: fromType, NewType: toType}
+	entry := FieldHistory{Version: version, Table: table, ColumnName: column, OldType: fromType, NewType: toType}
 	_ = db.Create(&entry).Error
 }
