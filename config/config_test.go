@@ -33,3 +33,14 @@ func TestValidateDirs(t *testing.T) {
 		t.Fatalf("expected error for missing mig dir")
 	}
 }
+
+func TestLoad_MigrationsPath(t *testing.T) {
+	old := os.Getenv("MIGRATIONS_PATH")
+	t.Setenv("MIGRATIONS_PATH", "/tmp/migs")
+	defer os.Setenv("MIGRATIONS_PATH", old)
+
+	cfg := Load()
+	if cfg.MigDir != "/tmp/migs" {
+		t.Fatalf("expected /tmp/migs, got %s", cfg.MigDir)
+	}
+}
