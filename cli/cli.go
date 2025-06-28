@@ -158,7 +158,7 @@ func newGenerateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			models, err := helpers.LoadModels(modelsDir)
+			models, err := helpers.LoadModels()
 			if err != nil {
 				return err
 			}
@@ -176,7 +176,7 @@ func newMigrateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			models, err := helpers.LoadModels(modelsDir)
+			models, err := helpers.LoadModels()
 			if err != nil {
 				return err
 			}

@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"matters-service/internal/models"
+	"github.com/misaelcrespo30/DriftFlow/internal/models"
 )
 
 // MatterStatusRepository defines database operations for MatterStatus using GORM.

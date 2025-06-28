@@ -2,11 +2,11 @@ package handler
 
 import (
 	"context"
-	"matters-service/internal/models"
+	"github.com/misaelcrespo30/DriftFlow/internal/models"
 	"time"
 
-	"matters-service/internal/service"
-	pb "matters-service/proto"
+	"github.com/misaelcrespo30/DriftFlow/internal/service"
+	pb "github.com/misaelcrespo30/DriftFlow/proto"
 )
 
 type GRPCServer struct {

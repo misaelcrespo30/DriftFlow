@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"matters-service/internal/models"
-	"matters-service/internal/repository"
+	"github.com/misaelcrespo30/DriftFlow/internal/models"
+	"github.com/misaelcrespo30/DriftFlow/internal/repository"
 )
 
 // MatterRelatedService exposes business logic for MatterRelated operations.

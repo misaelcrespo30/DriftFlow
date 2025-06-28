@@ -1,0 +1,314 @@
+syntax = "proto3";
+
+package matter;
+
+option go_package = "matters-service/proto;proto";
+
+message Matter {
+  int64 id = 1;
+  string description = 2;
+  string open_date = 3;
+  string close_date = 4;
+  string pending_date = 5;
+  string limitation_date = 6;
+  bool is_billable = 7;
+  bool is_limitation_date_satisfied = 8;
+  int64 status_id = 9;
+  double rate = 10;
+  int64 practice_area_id = 11;
+  int64 client_id = 12;
+  int64 originating_attorney_id = 13;
+  int64 responsible_attorney_id = 14;
+  bool is_deleted = 15;
+  string matter_number = 16;
+  double budget = 17;
+  bool has_budget = 18;
+  string field1 = 19;
+  string field2 = 20;
+  string field3 = 21;
+  string display_name = 22;
+  int64 created_by_id = 23;
+  string created_on = 24;
+  int64 modified_by_id = 25;
+  string modified_on = 26;
+  string custom_fields = 27;
+  int64 custom_form_version = 28;
+  int64 retainer_fee_bill_id = 29;
+  string retainer_fee_first_payment = 30;
+  double retainer_fee_initial_amount = 31;
+  string retainer_fee_last_billed_date = 32;
+  double retainer_fee_monthly_amount = 33;
+  int64 retainer_fee_user_id = 34;
+  int64 firm_office_id = 35;
+  int64 subject_area_id = 36;
+  bool is_hidden = 37;
+  int64 law_clerk_id = 38;
+}
+
+message ListMattersRequest {
+  uint32 id = 1;
+}
+
+message ListMattersResponse {
+  uint32 id = 1;
+  repeated Matter matters = 2;
+}
+
+message GetMatterRequest {
+  int64 id = 1;
+}
+
+message CreateMatterRequest {
+  uint32 id = 1;
+  string description = 2;
+  string open_date = 3;
+  string close_date = 4;
+  string pending_date = 5;
+  string limitation_date = 6;
+  bool is_billable = 7;
+  bool is_limitation_date_satisfied = 8;
+  int64 status_id = 9;
+  double rate = 10;
+  int64 practice_area_id = 11;
+  int64 client_id = 12;
+  int64 originating_attorney_id = 13;
+  int64 responsible_attorney_id = 14;
+  bool is_deleted = 15;
+  string matter_number = 16;
+  double budget = 17;
+  bool has_budget = 18;
+  string field1 = 19;
+  string field2 = 20;
+  string field3 = 21;
+  string display_name = 22;
+  int64 created_by_id = 23;
+  string created_on = 24;
+  int64 modified_by_id = 25;
+  string modified_on = 26;
+  string custom_fields = 27;
+  int64 custom_form_version = 28;
+  int64 retainer_fee_bill_id = 29;
+  string retainer_fee_first_payment = 30;
+  double retainer_fee_initial_amount = 31;
+  string retainer_fee_last_billed_date = 32;
+  double retainer_fee_monthly_amount = 33;
+  int64 retainer_fee_user_id = 34;
+  int64 firm_office_id = 35;
+  int64 subject_area_id = 36;
+  bool is_hidden = 37;
+  int64 law_clerk_id = 38;
+}
+
+service MatterService {
+  rpc ListMatters (ListMattersRequest) returns (ListMattersResponse);
+  rpc GetMatter (GetMatterRequest) returns (Matter);
+  rpc CreateMatter (CreateMatterRequest) returns (Matter);
+}
+
+
+message MatterActivity {
+  int64 id = 1;
+  int64 user_id = 2;
+  int64 matter_id = 3;
+  string date = 4;
+  string description = 5;
+  double rate = 6;
+  int64 created_by_id = 7;
+  string created_on = 8;
+  int64 modified_by_id = 9;
+  string modified_on = 10;
+  int64 event_entry_id = 11;
+  int64 matter_note_id = 12;
+  int64 task_id = 13;
+  int64 category_id = 14;
+  string activity_type = 15;
+  double amount = 16;
+  string code = 17;
+  int64 matter_id1 = 18;
+  int64 bill_id = 19;
+  int64 duration = 20;
+  string started_at = 21;
+  string matter_flat_fee_code = 22;
+  bool is_main = 23;
+  string field1 = 24;
+  string field2 = 25;
+  string field3 = 26;
+  bool is_billable = 27;
+  double charge = 28;
+  bool no_matter = 29;
+}
+
+message ListMatterActivitiesRequest {
+  uint32 id = 1;
+}
+
+message ListMatterActivitiesResponse {
+  uint32 id = 1;
+  repeated MatterActivity matter_activities = 2;
+}
+
+message GetMatterActivityRequest {
+  int64 id = 1;
+}
+
+message CreateMatterActivityRequest {
+  uint32 id = 1;
+  int64 user_id = 2;
+  int64 matter_id = 3;
+  string date = 4;
+  string description = 5;
+  double rate = 6;
+  int64 created_by_id = 7;
+  string created_on = 8;
+  int64 modified_by_id = 9;
+  string modified_on = 10;
+  int64 event_entry_id = 11;
+  int64 matter_note_id = 12;
+  int64 task_id = 13;
+  int64 category_id = 14;
+  string activity_type = 15;
+  double amount = 16;
+  string code = 17;
+  int64 matter_id1 = 18;
+  int64 bill_id = 19;
+  int64 duration = 20;
+  string started_at = 21;
+  string matter_flat_fee_code = 22;
+  bool is_main = 23;
+  string field1 = 24;
+  string field2 = 25;
+  string field3 = 26;
+  bool is_billable = 27;
+  double charge = 28;
+  bool no_matter = 29;
+}
+
+service MatterActivityService {
+  rpc ListMatterActivities (ListMatterActivitiesRequest) returns (ListMatterActivitiesResponse);
+  rpc GetMatterActivity (GetMatterActivityRequest) returns (MatterActivity);
+  rpc CreateMatterActivity (CreateMatterActivityRequest) returns (MatterActivity);
+}
+
+
+message MatterRelated {
+  int64 id = 1;
+  int64 matter_id = 2;
+  int64 activity_log_id = 3;
+}
+
+message ListMatterRelatedRequest {
+  uint32 id = 1;
+}
+
+message ListMatterRelatedResponse {
+  uint32 id = 1;
+  repeated MatterRelated matter_relateds = 2;
+}
+
+message GetMatterRelatedRequest {
+  int64 id = 1;
+}
+
+message CreateMatterRelatedRequest {
+  uint32 id = 1;
+  int64 matter_id = 2;
+  int64 activity_log_id = 3;
+}
+
+service MatterRelatedService {
+  rpc ListMatterRelated (ListMatterRelatedRequest) returns (ListMatterRelatedResponse);
+  rpc GetMatterRelated (GetMatterRelatedRequest) returns (MatterRelated);
+  rpc CreateMatterRelated (CreateMatterRelatedRequest) returns (MatterRelated);
+}
+
+
+message MatterStatus {
+  int64 id = 1;
+  string name = 2;
+  bool is_system = 3;
+  bool is_note_required = 4;
+  string color = 5;
+}
+
+message ListMatterStatusesRequest {
+  uint32 id = 1;
+}
+
+message ListMatterStatusesResponse {
+  uint32 id = 1;
+  repeated MatterStatus matter_statuses = 2;
+}
+
+message GetMatterStatusRequest {
+  int64 id = 1;
+}
+
+message CreateMatterStatusRequest {
+  uint32 id = 1;
+  string name = 2;
+  bool is_system = 3;
+  bool is_note_required = 4;
+  string color = 5;
+}
+
+service MatterStatusService {
+  rpc ListMatterStatuses (ListMatterStatusesRequest) returns (ListMatterStatusesResponse);
+  rpc GetMatterStatus (GetMatterStatusRequest) returns (MatterStatus);
+  rpc CreateMatterStatus (CreateMatterStatusRequest) returns (MatterStatus);
+}
+
+
+message MatterActivityCategory {
+  int64 id = 1;
+  string name = 2;
+  int64 created_by_id = 3;
+  string created_on = 4;
+  string discriminator = 5;
+  int64 modified_by_id = 6;
+  string modified_on = 7;
+  double rate = 8;
+  string billing_method = 9;
+  double custom_rate = 10;
+  double matter_flat_fee_category_rate = 11;
+  string field1 = 12;
+  string field2 = 13;
+  string field3 = 14;
+}
+
+message ListMatterActivityCategoriesRequest {
+  uint32 id = 1;
+}
+
+message ListMatterActivityCategoriesResponse {
+  uint32 id = 1;
+  repeated MatterActivityCategory matter_activity_categories = 2;
+}
+
+message GetMatterActivityCategoryRequest {
+  int64 id = 1;
+}
+
+message CreateMatterActivityCategoryRequest {
+  uint32 id = 1;
+  string name = 2;
+  int64 created_by_id = 3;
+  string created_on = 4;
+  string discriminator = 5;
+  int64 modified_by_id = 6;
+  string modified_on = 7;
+  double rate = 8;
+  string billing_method = 9;
+  double custom_rate = 10;
+  double matter_flat_fee_category_rate = 11;
+  string field1 = 12;
+  string field2 = 13;
+  string field3 = 14;
+}
+
+service MatterActivityCategoryService {
+  rpc ListMatterActivityCategories (ListMatterActivityCategoriesRequest) returns (ListMatterActivityCategoriesResponse);
+  rpc GetMatterActivityCategory (GetMatterActivityCategoryRequest) returns (MatterActivityCategory);
+  rpc CreateMatterActivityCategory (CreateMatterActivityCategoryRequest) returns (MatterActivityCategory);
+}
+
+

@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"matters-service/internal/models"
+	"github.com/misaelcrespo30/DriftFlow/internal/models"
 )
 
 // MatterActivityRepository defines database operations for MatterActivity using GORM.

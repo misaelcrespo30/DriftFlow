@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"matters-service/internal/models"
-	"matters-service/internal/repository"
+	"github.com/misaelcrespo30/DriftFlow/internal/models"
+	"github.com/misaelcrespo30/DriftFlow/internal/repository"
 )
 
 // MatterActivityService exposes business logic for MatterActivity operations.

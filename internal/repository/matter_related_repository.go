@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"matters-service/internal/models"
+	"github.com/misaelcrespo30/DriftFlow/internal/models"
 )
 
 // MatterRelatedRepository defines database operations for MatterRelated using GORM.

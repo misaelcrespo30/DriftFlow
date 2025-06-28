@@ -7,6 +7,49 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/config/config.go" />
+              <option value="file://$PROJECT_DIR$/internal/config/config.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="GRPCServer">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/handler/grpc_server.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="Matter">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/models/matter.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="MatterActivity">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/models/matter_activity.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="MatterActivityCategory">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/models/matter_activity_category.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="MatterRelated">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/models/matter_related.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="MatterStatus">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/models/matter_status.go" />
             </set>
           </value>
         </entry>
@@ -52,6 +95,76 @@
             </set>
           </value>
         </entry>
+        <entry key="gormActivityRepo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/repository/matter_activity_repository.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="gormCategoryRepo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/repository/matter_activity_category_repository.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="gormMatterRepo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/repository/matter_repository.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="gormRelatedRepo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/repository/matter_related_repository.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="gormStatusRepo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/repository/matter_status_repository.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="matterActivityCategoryService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/service/matter_activity_category_service.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="matterActivityService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/service/matter_activity_service.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="matterRelatedService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/service/matter_related_service.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="matterService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/service/matter_service.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="matterStatusService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/service/matter_status_service.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="result">
           <value>
             <set>
@@ -85,7 +198,7 @@
         <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750979476193" />
+              <option name="lastModified" value="1751134720364" />
             </ScannedPath>
           </value>
         </entry>
@@ -167,7 +280,31 @@
         <entry key="file://$PROJECT_DIR$/helpers/model_loader.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750979464133" />
+              <option name="lastModified" value="1751133596142" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/config/config.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1749846519463" />
+              <option name="schema">
+                <list>
+                  <option value="Config" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/handler/grpc_server.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133700189" />
+              <option name="schema">
+                <list>
+                  <option value="GRPCServer" />
+                </list>
+              </option>
             </ScannedPath>
           </value>
         </entry>
@@ -182,6 +319,193 @@
           <value>
             <ScannedPath>
               <option name="lastModified" value="1750821242479" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/matter.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750771572384" />
+              <option name="schema">
+                <list>
+                  <option value="Matter" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/matter_activity.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750771572384" />
+              <option name="schema">
+                <list>
+                  <option value="MatterActivity" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/matter_activity_category.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750771572384" />
+              <option name="schema">
+                <list>
+                  <option value="MatterActivityCategory" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/matter_related.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750771572384" />
+              <option name="schema">
+                <list>
+                  <option value="MatterRelated" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/matter_status.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750771572390" />
+              <option name="schema">
+                <list>
+                  <option value="MatterStatus" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/models.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1750709584849" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/repository/matter_activity_category_repository.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133923571" />
+              <option name="schema">
+                <list>
+                  <option value="gormCategoryRepo" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/repository/matter_activity_repository.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133923563" />
+              <option name="schema">
+                <list>
+                  <option value="gormActivityRepo" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/repository/matter_related_repository.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133936190" />
+              <option name="schema">
+                <list>
+                  <option value="gormRelatedRepo" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/repository/matter_repository.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133936182" />
+              <option name="schema">
+                <list>
+                  <option value="gormMatterRepo" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/repository/matter_status_repository.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133942806" />
+              <option name="schema">
+                <list>
+                  <option value="gormStatusRepo" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/service/matter_activity_category_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133990055" />
+              <option name="schema">
+                <list>
+                  <option value="matterActivityCategoryService" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/service/matter_activity_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133990064" />
+              <option name="schema">
+                <list>
+                  <option value="matterActivityService" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/service/matter_related_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133990070" />
+              <option name="schema">
+                <list>
+                  <option value="matterRelatedService" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/service/matter_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751133990079" />
+              <option name="schema">
+                <list>
+                  <option value="matterService" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/service/matter_status_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751134004337" />
+              <option name="schema">
+                <list>
+                  <option value="matterStatusService" />
+                </list>
+              </option>
             </ScannedPath>
           </value>
         </entry>
@@ -272,6 +596,22 @@
     <option name="tableStructMapping">
       <map>
         <entry key="config" value="Config" />
+        <entry key="gorm_activity_repo" value="gormActivityRepo" />
+        <entry key="gorm_category_repo" value="gormCategoryRepo" />
+        <entry key="gorm_matter_repo" value="gormMatterRepo" />
+        <entry key="gorm_related_repo" value="gormRelatedRepo" />
+        <entry key="gorm_status_repo" value="gormStatusRepo" />
+        <entry key="grpc_server" value="GRPCServer" />
+        <entry key="matter" value="Matter" />
+        <entry key="matter_activity" value="MatterActivity" />
+        <entry key="matter_activity_category" value="MatterActivityCategory" />
+        <entry key="matter_activity_category_service" value="matterActivityCategoryService" />
+        <entry key="matter_activity_service" value="matterActivityService" />
+        <entry key="matter_related" value="MatterRelated" />
+        <entry key="matter_related_service" value="matterRelatedService" />
+        <entry key="matter_service" value="matterService" />
+        <entry key="matter_status" value="MatterStatus" />
+        <entry key="matter_status_service" value="matterStatusService" />
         <entry key="migration_state" value="MigrationState" />
         <entry key="result" value="result" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
@@ -282,6 +622,6 @@
         <entry key="tmpl_model" value="tmplModel" />
       </map>
     </option>
-    <option name="lastTimeChecked" value="1750949369570" />
+    <option name="lastTimeChecked" value="1751044401609" />
   </component>
 </project>
