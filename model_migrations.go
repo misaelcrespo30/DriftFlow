@@ -1,6 +1,7 @@
 package driftflow
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -53,19 +54,6 @@ func createTableSQL(table string, cols tableInfo) string {
 	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", table, strings.Join(defs, ",\n  "))
 }
 
-func latestCreateFile(dir, table string) (string, error) {
-	pattern := filepath.Join(dir, fmt.Sprintf("*_create_%s_table.up.sql", table))
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return "", err
-	}
-	sort.Strings(matches)
-	if len(matches) == 0 {
-		return "", fs.ErrNotExist
-	}
-	return matches[len(matches)-1], nil
-}
-
 func fileContent(path string) (string, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -111,6 +99,93 @@ func diffColumns(old, new tableInfo) (added, removed tableInfo) {
 	return
 }
 
+func parseAddColumns(sql string) tableInfo {
+	cols := make(tableInfo)
+	for _, line := range strings.Split(sql, "\n") {
+		line = strings.TrimSpace(strings.TrimSuffix(line, ";"))
+		if line == "" {
+			continue
+		}
+		idx := strings.Index(line, "ADD COLUMN ")
+		if idx == -1 {
+			continue
+		}
+		rest := line[idx+len("ADD COLUMN "):]
+		parts := strings.Fields(rest)
+		if len(parts) < 2 {
+			continue
+		}
+		col := parts[0]
+		typ := strings.Join(parts[1:], " ")
+		cols[col] = typ
+	}
+	return cols
+}
+
+func parseRemoveColumns(sql string) []string {
+	var cols []string
+	for _, line := range strings.Split(sql, "\n") {
+		line = strings.TrimSpace(strings.TrimSuffix(line, ";"))
+		if line == "" {
+			continue
+		}
+		idx := strings.Index(line, "DROP COLUMN ")
+		if idx == -1 {
+			continue
+		}
+		rest := line[idx+len("DROP COLUMN "):]
+		parts := strings.Fields(rest)
+		if len(parts) < 1 {
+			continue
+		}
+		cols = append(cols, parts[0])
+	}
+	return cols
+}
+
+func loadTableState(dir, table string) (tableInfo, error) {
+	createPattern := filepath.Join(dir, fmt.Sprintf("*_create_%s_table.up.sql", table))
+	addPattern := filepath.Join(dir, fmt.Sprintf("*_add_fields_to_%s_table.up.sql", table))
+	removePattern := filepath.Join(dir, fmt.Sprintf("*_remove_fields_from_%s_table.up.sql", table))
+
+	files, err := filepath.Glob(createPattern)
+	if err != nil {
+		return nil, err
+	}
+	addFiles, _ := filepath.Glob(addPattern)
+	removeFiles, _ := filepath.Glob(removePattern)
+	files = append(files, addFiles...)
+	files = append(files, removeFiles...)
+	sort.Strings(files)
+	if len(files) == 0 {
+		return nil, fs.ErrNotExist
+	}
+
+	cols := make(tableInfo)
+	for _, f := range files {
+		sql, err := fileContent(f)
+		if err != nil {
+			return nil, err
+		}
+		base := filepath.Base(f)
+		switch {
+		case strings.Contains(base, "_create_"):
+			cols = parseCreateColumns(sql)
+		case strings.Contains(base, "_add_fields_to_"):
+			add := parseAddColumns(sql)
+			for c, t := range add {
+				cols[c] = t
+			}
+		case strings.Contains(base, "_remove_fields_from_"):
+			rem := parseRemoveColumns(sql)
+			for _, c := range rem {
+				delete(cols, c)
+			}
+		}
+	}
+	return cols, nil
+}
+
 func duplicateContent(dir, pattern, sql string) bool {
 	files, _ := filepath.Glob(filepath.Join(dir, pattern))
 	for _, f := range files {
@@ -146,28 +221,24 @@ func GenerateModelMigrations() error {
 	idx := 0
 
 	for table, cols := range schema {
-		genSQL := createTableSQL(table, cols)
-		createFile, err := latestCreateFile(migDir, table)
+		existing, err := loadTableState(migDir, table)
 		if err != nil {
-			ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
-			idx++
-			name := fmt.Sprintf("%s_create_%s_table.up.sql", ts, table)
-			if !duplicateContent(migDir, fmt.Sprintf("*_create_%s_table.up.sql", table), genSQL) {
-				if err := os.WriteFile(filepath.Join(migDir, name), []byte(genSQL+"\n"), 0o644); err != nil {
-					return err
+			if errors.Is(err, fs.ErrNotExist) {
+				ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
+				idx++
+				sql := createTableSQL(table, cols)
+				name := fmt.Sprintf("%s_create_%s_table.up.sql", ts, table)
+				if !duplicateContent(migDir, fmt.Sprintf("*_create_%s_table.up.sql", table), sql) {
+					if err := os.WriteFile(filepath.Join(migDir, name), []byte(sql+"\n"), 0o644); err != nil {
+						return err
+					}
 				}
+				continue
 			}
-			continue
-		}
-		oldSQL, err := fileContent(createFile)
-		if err != nil {
 			return err
 		}
-		if strings.TrimSpace(oldSQL) == strings.TrimSpace(genSQL) {
-			continue
-		}
-		oldCols := parseCreateColumns(oldSQL)
-		added, removed := diffColumns(oldCols, cols)
+
+		added, removed := diffColumns(existing, cols)
 		if len(added) > 0 {
 			ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
 			idx++
