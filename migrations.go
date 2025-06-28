@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"gorm.io/gorm"
 
@@ -56,6 +58,62 @@ func recordMigration(db *gorm.DB, version string) error {
 // removeMigration removes a migration record by version.
 func removeMigration(db *gorm.DB, version string) error {
 	return db.Where("version = ?", version).Delete(&SchemaMigration{}).Error
+}
+
+// toSnakeCase converts CamelCase names to snake_case.
+func toSnakeCase(s string) string {
+	var out []rune
+	for i, r := range s {
+		if unicode.IsUpper(r) && i > 0 {
+			out = append(out, '_')
+		}
+		out = append(out, unicode.ToLower(r))
+	}
+	return string(out)
+}
+
+// getTagValue extracts a value for key from a gorm struct tag.
+func getTagValue(tag, key string) string {
+	parts := strings.Split(tag, ";")
+	prefix := key + ":"
+	for _, p := range parts {
+		if strings.HasPrefix(p, prefix) {
+			return strings.TrimPrefix(p, prefix)
+		}
+	}
+	return ""
+}
+
+// sqlTypeOf provides a simple mapping from Go types to SQL types.
+func sqlTypeOf(t reflect.Type) string {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.PkgPath() == "time" && t.Name() == "Time" {
+		return "timestamp"
+	}
+	switch t.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if t.Kind() == reflect.Int64 {
+			return "bigint"
+		}
+		return "integer"
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if t.Kind() == reflect.Uint64 {
+			return "bigint"
+		}
+		return "integer"
+	case reflect.Float32:
+		return "real"
+	case reflect.Float64:
+		return "double precision"
+	case reflect.Bool:
+		return "boolean"
+	case reflect.String:
+		return "text"
+	default:
+		return "text"
+	}
 }
 
 // Up applies all pending migrations found in dir.
@@ -196,69 +254,44 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 		return err
 	}
 
-	var upStmts []string
-	var downStmts []string
-	for _, m := range models {
+	for i, m := range models {
 		stmt := &gorm.Statement{DB: db}
 		if err := stmt.Parse(m); err != nil {
 			return err
 		}
 
-		exists := db.Migrator().HasTable(m)
-		if !exists {
-			dry := db.Session(&gorm.Session{DryRun: true})
-			if err := dry.Migrator().CreateTable(m); err != nil {
-				return err
+		table := stmt.Schema.Table
+		var cols []string
+		for _, f := range stmt.Schema.Fields {
+			if f.Hidden {
+				continue
 			}
-			upStmts = append(upStmts, dry.Statement.SQL.String())
-
-			drop := db.Session(&gorm.Session{DryRun: true})
-			if err := drop.Migrator().DropTable(m); err != nil {
-				return err
+			name := f.DBName
+			if name == "" {
+				name = toSnakeCase(f.Name)
 			}
-			downStmts = append([]string{drop.Statement.SQL.String()}, downStmts...)
+			cols = append(cols, fmt.Sprintf("%s %s", name, sqlTypeOf(f.FieldType)))
+		}
+		if len(cols) == 0 {
 			continue
 		}
 
-		cols, err := db.Migrator().ColumnTypes(m)
-		if err != nil {
-			return err
-		}
-		existing := map[string]struct{}{}
-		for _, c := range cols {
-			existing[strings.ToLower(c.Name())] = struct{}{}
-		}
-		for _, f := range stmt.Schema.Fields {
-			name := strings.ToLower(f.DBName)
-			if _, ok := existing[name]; ok {
-				continue
-			}
-			dry := db.Session(&gorm.Session{DryRun: true})
-			if err := dry.Migrator().AddColumn(m, f.DBName); err != nil {
+		upSQL := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);\n", table, strings.Join(cols, ",\n  "))
+		downSQL := fmt.Sprintf("DROP TABLE %s;\n", table)
+
+		prefix := fmt.Sprintf("%04d_%s", i+1, table)
+		upPath := filepath.Join(dir, prefix+".up.sql")
+		downPath := filepath.Join(dir, prefix+".down.sql")
+		if _, err := os.Stat(upPath); os.IsNotExist(err) {
+			if err := os.WriteFile(upPath, []byte(upSQL), 0o644); err != nil {
 				return err
 			}
-			upStmts = append(upStmts, dry.Statement.SQL.String())
-
-			drop := db.Session(&gorm.Session{DryRun: true})
-			if err := drop.Migrator().DropColumn(m, f.DBName); err != nil {
+		}
+		if _, err := os.Stat(downPath); os.IsNotExist(err) {
+			if err := os.WriteFile(downPath, []byte(downSQL), 0o644); err != nil {
 				return err
 			}
-			downStmts = append([]string{drop.Statement.SQL.String()}, downStmts...)
 		}
-	}
-
-	if len(upStmts) == 0 {
-		return nil
-	}
-
-	name := time.Now().Format("20060102150405") + "_auto"
-	upFile := filepath.Join(dir, name+".up.sql")
-	downFile := filepath.Join(dir, name+".down.sql")
-	if err := os.WriteFile(upFile, []byte(strings.Join(upStmts, "\n")), 0o644); err != nil {
-		return err
-	}
-	if err := os.WriteFile(downFile, []byte(strings.Join(downStmts, "\n")), 0o644); err != nil {
-		return err
 	}
 	return nil
 }
