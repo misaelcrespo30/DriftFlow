@@ -33,9 +33,6 @@ Generated migrations use a timestamp prefix similar to other frameworks. Files
 are created as `YYYYMMDDHHMMSS_table.up.sql` and `YYYYMMDDHHMMSS_table.down.sql`.
 This keeps migrations ordered chronologically and simplifies rollbacks.
 
-The package also exposes a Go API for loading migration state and executing
-migrations programmatically.
-
 ### Using the CLI programmatically
 
 Besides calling the binary directly you can execute DriftFlow commands from
@@ -62,9 +59,9 @@ arguments you need:
 
 ### Environment
 
-DriftFlow loads configuration from environment variables or a `.env` file. The
-loader searches the working directory and its parents for `.env`, falling back
-to the default file bundled with the library if none is found:
+DriftFlow loads configuration from environment variables or a `.env` file.
+It searches the working directory and its parents for `.env`, falling back to
+the default file bundled with the library if none is found:
 
 - `DB_TYPE` sets the database driver (`postgres`, `mysql`, `sqlserver`). Defaults to `postgres`.
 - `DSN` provides the full database connection string. When not set, a DSN is assembled from `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_SSLMODE`.
@@ -75,8 +72,6 @@ to the default file bundled with the library if none is found:
 If no `.env` file exists, `config.EnsureEnvFile` will create one using the
 defaults in `config.defaultEnv`. When a file is present but missing any of these
 keys, they are appended automatically with their default values.
-
-`loader.Load` uses the `MIG_DIR` (or `MIGRATIONS_PATH`) value when called without a directory.
 
 ### Dynamic seed templates
 
