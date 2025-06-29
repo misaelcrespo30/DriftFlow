@@ -12,6 +12,8 @@ import (
 	"time"
 	"unicode"
 
+	"gorm.io/gorm/schema"
+
 	"gorm.io/gorm"
 
 	"github.com/misaelcrespo30/DriftFlow/config"
@@ -76,6 +78,21 @@ func toSnakeCase(s string) string {
 		out = append(out, unicode.ToLower(r))
 	}
 	return string(out)
+}
+
+// gormTableName returns the table name for the given type following
+// GORM's default naming strategy and honoring a TableName method if present.
+func gormTableName(t reflect.Type) string {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return ""
+	}
+	if tabler, ok := reflect.New(t).Interface().(interface{ TableName() string }); ok {
+		return tabler.TableName()
+	}
+	return schema.NamingStrategy{}.TableName(t.Name())
 }
 
 // getTagValue extracts a value for key from a gorm struct tag.
@@ -570,7 +587,7 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		if t.Kind() != reflect.Struct {
 			continue
 		}
-		table := toSnakeCase(t.Name())
+		table := gormTableName(t)
 		cols := make(tableInfo)
 		defs := make(tableInfo)
 		var order []string
