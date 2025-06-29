@@ -1,15 +1,11 @@
 package state
 
-var models []interface{}
+var registeredModels []interface{}
 
-// SetModels sets the slice of models used by DriftFlow when generating
-// migrations or seeds. The provided slice is copied to avoid unintended
-// modifications after the call.
-func SetModels(ms []interface{}) {
-	models = append([]interface{}(nil), ms...)
+func SetModels(models []interface{}) {
+	registeredModels = append([]interface{}(nil), models...)
 }
 
-// Models returns the currently configured models slice.
-func Models() []interface{} {
-	return append([]interface{}(nil), models...)
+func GetModels() []interface{} {
+	return append([]interface{}(nil), registeredModels...)
 }
