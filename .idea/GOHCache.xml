@@ -385,7 +385,7 @@
         <entry key="file://$PROJECT_DIR$/cmd/driftflow.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750954741409" />
+              <option name="lastModified" value="1751234883766" />
             </ScannedPath>
           </value>
         </entry>
@@ -465,7 +465,7 @@
         <entry key="file://$PROJECT_DIR$/helpers/model_loader.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751232770829" />
+              <option name="lastModified" value="1751233587437" />
             </ScannedPath>
           </value>
         </entry>
@@ -764,7 +764,7 @@
         <entry key="file://$PROJECT_DIR$/seedgen.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751217864831" />
+              <option name="lastModified" value="1751237576154" />
             </ScannedPath>
           </value>
         </entry>
@@ -777,6 +777,13 @@
                   <option value="tmplModel" />
                 </list>
               </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/state/state.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1751233272760" />
             </ScannedPath>
           </value>
         </entry>

@@ -43,6 +43,14 @@ func GenerateSeedTemplates(models []interface{}, dir string) error {
 // custom generator functions for field values. The map key should match the JSON
 // field name. If no generator is found for a field, a zero value is used.
 func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[string]func() interface{}) error {
+	if strings.TrimSpace(dir) == "" {
+		dir = os.Getenv("SEED_DIR")
+		if strings.TrimSpace(dir) == "" {
+			dir = "seed"
+			fmt.Println("No se definió 'SEED_DIR', se usará ruta por defecto: ./seed")
+		}
+	}
+
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
