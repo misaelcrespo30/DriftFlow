@@ -83,8 +83,9 @@ func getTagValue(tag, key string) string {
 	parts := strings.Split(tag, ";")
 	prefix := key + ":"
 	for _, p := range parts {
-		if strings.HasPrefix(p, prefix) {
-			return strings.TrimPrefix(p, prefix)
+		t := strings.TrimSpace(p)
+		if strings.HasPrefix(t, prefix) {
+			return strings.TrimSpace(strings.TrimPrefix(t, prefix))
 		}
 	}
 	return ""
