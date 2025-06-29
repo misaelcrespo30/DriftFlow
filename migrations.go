@@ -471,6 +471,33 @@ func Migrate(db *gorm.DB, dir string, models []interface{}) error {
 // buildModelSchema loads the schema info from struct models.
 func buildModelSchema(models []interface{}) (schemaInfo, error) {
 	s := make(schemaInfo)
+
+	var collectFields func(reflect.Type, tableInfo)
+	collectFields = func(t reflect.Type, cols tableInfo) {
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() != reflect.Struct {
+			return
+		}
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if !f.IsExported() || f.Tag.Get("gorm") == "-" {
+				continue
+			}
+			// Recursively process embedded structs
+			if f.Anonymous && (f.Type.Kind() == reflect.Struct || (f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct)) {
+				collectFields(f.Type, cols)
+				continue
+			}
+			name := getTagValue(f.Tag.Get("gorm"), "column")
+			if name == "" {
+				name = toSnakeCase(f.Name)
+			}
+			cols[name] = sqlTypeOf(f.Type)
+		}
+	}
+
 	for _, m := range models {
 		t := reflect.TypeOf(m)
 		if t.Kind() == reflect.Pointer {
@@ -481,21 +508,12 @@ func buildModelSchema(models []interface{}) (schemaInfo, error) {
 		}
 		table := toSnakeCase(t.Name())
 		cols := make(tableInfo)
-		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-			if !f.IsExported() || f.Tag.Get("gorm") == "-" {
-				continue
-			}
-			name := getTagValue(f.Tag.Get("gorm"), "column")
-			if name == "" {
-				name = toSnakeCase(f.Name)
-			}
-			cols[name] = sqlTypeOf(f.Type)
-		}
+		collectFields(t, cols)
 		if len(cols) > 0 {
 			s[table] = cols
 		}
 	}
+
 	return s, nil
 }
 
