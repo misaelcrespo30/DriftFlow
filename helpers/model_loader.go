@@ -2,7 +2,7 @@ package helpers
 
 import (
 	"errors"
-	"github.com/misaelcrespo30/DriftFlow/internal/state"
+	"github.com/misaelcrespo30/DriftFlow/state"
 )
 
 // LoadModels validates the directory defined by the MODELS_PATH environment
