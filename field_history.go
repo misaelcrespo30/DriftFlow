@@ -7,13 +7,13 @@ import (
 
 // FieldHistory represents a change to a table column.
 type FieldHistory struct {
-	ID         uint `gorm:"primaryKey"`
-	Version    string
-	Table      string
-	ColumnName string
-	OldType    string
-	NewType    string
-	ChangedAt  time.Time `gorm:"autoCreateTime"`
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	Version    string    `json:"version"`
+	Table      string    `json:"table"`
+	ColumnName string    `json:"column_name"`
+	OldType    string    `json:"old_type"`
+	NewType    string    `json:"new_type"`
+	ChangedAt  time.Time `gorm:"autoCreateTime" json:"changed_at"`
 }
 
 func (FieldHistory) TableName() string {

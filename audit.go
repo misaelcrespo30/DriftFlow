@@ -11,13 +11,13 @@ import (
 
 // SchemaAuditLog representa una fila en la tabla de auditoría
 type SchemaAuditLog struct {
-	ID       uint      `gorm:"primaryKey"`
-	Version  string    // Versión de la migración o seed ejecutado
-	Commit   string    // Hash del commit de Git
-	Action   string    // Tipo de acción: apply, rollback, seed, etc.
-	User     string    // Usuario del sistema
-	Host     string    // Nombre del host
-	LoggedAt time.Time `gorm:"autoCreateTime"` // Timestamp generado automáticamente
+	ID       uint      `gorm:"primaryKey" json:"id"`
+	Version  string    `json:"version"`                         // Versión de la migración o seed ejecutado
+	Commit   string    `json:"commit"`                          // Hash del commit de Git
+	Action   string    `json:"action"`                          // Tipo de acción: apply, rollback, seed, etc.
+	User     string    `json:"user"`                            // Usuario del sistema
+	Host     string    `json:"host"`                            // Nombre del host
+	LoggedAt time.Time `gorm:"autoCreateTime" json:"logged_at"` // Timestamp generado automáticamente
 }
 
 // TableName define el nombre de la tabla usada por GORM

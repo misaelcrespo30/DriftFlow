@@ -12,11 +12,11 @@ import (
 
 // Config contains the minimal configuration required by the DriftFlow CLI.
 type Config struct {
-	DSN       string
-	Driver    string
-	MigDir    string
-	SeedDir   string
-	ModelsDir string
+	DSN       string `json:"dsn"`
+	Driver    string `json:"driver"`
+	MigDir    string `json:"mig_dir"`
+	SeedDir   string `json:"seed_dir"`
+	ModelsDir string `json:"models_dir"`
 }
 
 // Load reads environment variables (from the system or a .env file) and
