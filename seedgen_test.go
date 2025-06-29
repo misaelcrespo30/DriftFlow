@@ -71,3 +71,24 @@ func TestGenerateSeedTemplatesWithData(t *testing.T) {
 		t.Fatalf("unexpected first item: %#v", got[0])
 	}
 }
+
+func TestGenerateSeedTemplatesSkipExisting(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tmplmodel.seed.json")
+
+	if err := os.WriteFile(path, []byte("existing"), 0o644); err != nil {
+		t.Fatalf("prewrite: %v", err)
+	}
+
+	if err := GenerateSeedTemplates([]interface{}{tmplModel{}}, dir); err != nil {
+		t.Fatalf("generate: %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if string(data) != "existing" {
+		t.Fatalf("file was overwritten: %s", string(data))
+	}
+}

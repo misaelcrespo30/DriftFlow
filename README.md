@@ -24,6 +24,7 @@ driftflow undo [n]   # rollback the last n migrations (default 1)
 driftflow rollback [n] # alias of undo
 driftflow seed       # execute JSON seed files
 driftflow seedgen    # generate JSON seed templates
+                     # existing seed files are skipped
 driftflow validate   # validate migration directory
 ```
 
