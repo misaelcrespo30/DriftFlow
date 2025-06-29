@@ -2,30 +2,37 @@ package driftflow
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 )
 
-func zeroValue(t reflect.Type) interface{} {
+func dummyValue(t reflect.Type, idx int, base time.Time) interface{} {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.PkgPath() == "time" && t.Name() == "Time" {
+		return base.Add(time.Duration(idx) * time.Hour)
+	}
 	switch t.Kind() {
 	case reflect.Bool:
-		return false
+		return idx%2 == 0
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return 0
-	case reflect.Float32, reflect.Float64:
-		return 0
+		return idx + 1
 	case reflect.String:
-		return ""
+		return fmt.Sprintf("value %d", idx+1)
 	default:
 		return nil
 	}
 }
 
-// GenerateSeedTemplates writes JSON seed templates for the provided models into dir.
-// Existing files are left untouched.
+// GenerateSeedTemplates writes JSON seed files with dummy data for the provided
+// models into dir. Each file contains an array of 10 objects and will be
+// overwritten if it already exists.
 func GenerateSeedTemplates(models []interface{}, dir string) error {
 	return GenerateSeedTemplatesWithData(models, dir, nil)
 }
@@ -37,6 +44,7 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
+	base := time.Now()
 	for _, m := range models {
 		t := reflect.TypeOf(m)
 		if t.Kind() == reflect.Pointer {
@@ -45,34 +53,41 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		if t.Kind() != reflect.Struct {
 			continue
 		}
-		file := strings.ToLower(t.Name()) + ".json"
+		file := strings.ToLower(t.Name()) + ".seed.json"
 		path := filepath.Join(dir, file)
-		if _, err := os.Stat(path); err == nil {
-			continue
-		}
-		obj := map[string]interface{}{}
-		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-			if !f.IsExported() {
-				continue
-			}
-			tag := f.Tag.Get("json")
-			if tag == "-" {
-				continue
-			}
-			name := strings.Split(tag, ",")[0]
-			if name == "" {
-				name = strings.ToLower(f.Name)
-			}
-			if gens != nil {
-				if fn, ok := gens[name]; ok {
-					obj[name] = fn()
+
+		objs := make([]map[string]interface{}, 10)
+		for i := 0; i < 10; i++ {
+			obj := make(map[string]interface{})
+			for j := 0; j < t.NumField(); j++ {
+				f := t.Field(j)
+				if !f.IsExported() {
 					continue
 				}
+				gtag := f.Tag.Get("gorm")
+				if gtag == "-" || strings.Contains(gtag, "->") {
+					continue
+				}
+				tag := f.Tag.Get("json")
+				if strings.Split(tag, ",")[0] == "-" {
+					continue
+				}
+				name := strings.Split(tag, ",")[0]
+				if name == "" {
+					name = strings.ToLower(f.Name)
+				}
+				if gens != nil {
+					if fn, ok := gens[name]; ok {
+						obj[name] = fn()
+						continue
+					}
+				}
+				obj[name] = dummyValue(f.Type, i, base)
 			}
-			obj[name] = zeroValue(f.Type)
+			objs[i] = obj
 		}
-		b, err := json.MarshalIndent([]map[string]interface{}{obj}, "", "  ")
+
+		b, err := json.MarshalIndent(objs, "", "  ")
 		if err != nil {
 			return err
 		}
