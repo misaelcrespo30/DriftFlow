@@ -11,31 +11,31 @@ import (
 // Config es la configuración centralizada de la aplicación
 type Config struct {
 	// GRPC
-	GRPCAddr string
+	GRPCAddr string `json:"grpc_addr"`
 
 	// Base de datos
-	DBType     string
-	DBHost     string
-	DBPort     string
-	DBName     string
-	DBUser     string
-	DBPassword string
-	DBAdminUser     string
-	DBAdminPassword string	
-	
-	DBSSLMode  string
+	DBType          string `json:"db_type"`
+	DBHost          string `json:"db_host"`
+	DBPort          string `json:"db_port"`
+	DBName          string `json:"db_name"`
+	DBUser          string `json:"db_user"`
+	DBPassword      string `json:"db_password"`
+	DBAdminUser     string `json:"db_admin_user"`
+	DBAdminPassword string `json:"db_admin_password"`
+
+	DBSSLMode string `json:"db_ssl_mode"`
 
 	// Autenticación
-	JWTSecret           string
-	JWTIssuer           string
-	SecretKey           string
-	EncryptionSecretKey string
-	AccessTokenExpiry   time.Duration
-	RefreshTokenExpiry  time.Duration
+	JWTSecret           string        `json:"jwt_secret"`
+	JWTIssuer           string        `json:"jwt_issuer"`
+	SecretKey           string        `json:"secret_key"`
+	EncryptionSecretKey string        `json:"encryption_secret_key"`
+	AccessTokenExpiry   time.Duration `json:"access_token_expiry"`
+	RefreshTokenExpiry  time.Duration `json:"refresh_token_expiry"`
 
 	// Redis
-	RedisAddr     string
-	RedisPassword string
+	RedisAddr     string `json:"redis_addr"`
+	RedisPassword string `json:"redis_password"`
 }
 
 // AppConfig contiene la configuración cargada globalmente

@@ -21,9 +21,9 @@ import (
 
 // SchemaMigration represents a row in the schema_migrations table.
 type SchemaMigration struct {
-	ID        uint      `gorm:"primaryKey"`
-	Version   string    `gorm:"uniqueIndex"`
-	AppliedAt time.Time `gorm:"autoCreateTime"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Version   string    `gorm:"uniqueIndex" json:"version"`
+	AppliedAt time.Time `gorm:"autoCreateTime" json:"applied_at"`
 }
 
 func (SchemaMigration) TableName() string {
