@@ -122,6 +122,52 @@ func sqlTypeOf(t reflect.Type) string {
 	}
 }
 
+// columnDef returns the basic type for diffing and the full column definition
+// string including common GORM decorators like primaryKey or autoIncrement.
+func columnDef(f reflect.StructField) (string, string) {
+	tag := f.Tag.Get("gorm")
+	typ := getTagValue(tag, "type")
+	size := getTagValue(tag, "size")
+	if typ == "" {
+		if size != "" && f.Type.Kind() == reflect.String {
+			typ = fmt.Sprintf("varchar(%s)", size)
+		} else {
+			typ = sqlTypeOf(f.Type)
+		}
+	}
+	base := typ
+	full := typ
+	lowTag := strings.ToLower(tag)
+
+	if strings.Contains(lowTag, "autoincrement") {
+		if typ == "integer" {
+			full = "serial"
+		} else if typ == "bigint" {
+			full = "bigserial"
+		}
+	}
+
+	parts := []string{full}
+
+	if strings.Contains(lowTag, "primarykey") {
+		parts = append(parts, "primary key")
+	}
+	if strings.Contains(lowTag, "autoincrement") && full == typ {
+		parts = append(parts, "auto_increment")
+	}
+	if strings.Contains(lowTag, "not null") {
+		parts = append(parts, "not null")
+	}
+	if strings.Contains(lowTag, "uniqueindex") || strings.Contains(lowTag, "unique") {
+		parts = append(parts, "unique")
+	}
+	if defVal := getTagValue(tag, "default"); defVal != "" {
+		parts = append(parts, "default "+defVal)
+	}
+
+	return base, strings.Join(parts, " ")
+}
+
 // modelsSchema builds a schemaInfo map from the provided models.
 func modelsSchema(db *gorm.DB, models []interface{}) (schemaInfo, error) {
 	s := make(schemaInfo)
@@ -469,16 +515,17 @@ func Migrate(db *gorm.DB, dir string, models []interface{}) error {
 }
 
 // buildModelSchema loads the schema info from struct models.
-func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, error) {
+func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, map[string]tableInfo, error) {
 	s := make(schemaInfo)
 	orderMap := make(map[string][]string)
+	defMap := make(map[string]tableInfo)
 
 	var (
-		collectFields func(reflect.Type, tableInfo, *[]string)
+		collectFields func(reflect.Type, tableInfo, tableInfo, *[]string)
 		hasGormModel  bool
 	)
 
-	collectFields = func(t reflect.Type, cols tableInfo, order *[]string) {
+	collectFields = func(t reflect.Type, cols tableInfo, defs tableInfo, order *[]string) {
 		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
@@ -500,7 +547,7 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, er
 					hasGormModel = true
 					continue
 				}
-				collectFields(ft, cols, order)
+				collectFields(ft, cols, defs, order)
 				continue
 			}
 			name := getTagValue(f.Tag.Get("gorm"), "column")
@@ -508,7 +555,9 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, er
 				name = toSnakeCase(f.Name)
 			}
 			*order = append(*order, name)
-			cols[name] = sqlTypeOf(f.Type)
+			base, full := columnDef(f)
+			cols[name] = base
+			defs[name] = full
 		}
 	}
 
@@ -522,32 +571,38 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, er
 		}
 		table := toSnakeCase(t.Name())
 		cols := make(tableInfo)
+		defs := make(tableInfo)
 		var order []string
 		hasGormModel = false
-		collectFields(t, cols, &order)
+		collectFields(t, cols, defs, &order)
 
 		if hasGormModel {
 			if _, ok := cols["id"]; !ok {
 				cols["id"] = sqlTypeOf(reflect.TypeOf(uint(0)))
+				defs["id"] = "serial primary key"
 			}
 			if _, ok := cols["created_at"]; !ok {
 				cols["created_at"] = sqlTypeOf(reflect.TypeOf(time.Time{}))
+				defs["created_at"] = "timestamp"
 			}
 			if _, ok := cols["updated_at"]; !ok {
 				cols["updated_at"] = sqlTypeOf(reflect.TypeOf(time.Time{}))
+				defs["updated_at"] = "timestamp"
 			}
 			if _, ok := cols["deleted_at"]; !ok {
 				cols["deleted_at"] = sqlTypeOf(reflect.TypeOf(time.Time{}))
+				defs["deleted_at"] = "timestamp"
 			}
 		}
 
 		if len(cols) > 0 {
 			s[table] = cols
 			orderMap[table] = order
+			defMap[table] = defs
 		}
 	}
 
-	return s, orderMap, nil
+	return s, orderMap, defMap, nil
 }
 
 func createTableSQL(table string, cols tableInfo, order []string) string {
@@ -734,7 +789,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 		return err
 	}
 
-	schema, orderMap, err := buildModelSchema(models)
+	schema, orderMap, defMap, err := buildModelSchema(models)
 	if err != nil {
 		return err
 	}
@@ -748,7 +803,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 			if errors.Is(err, fs.ErrNotExist) {
 				ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
 				idx++
-				sql := createTableSQL(table, cols, orderMap[table])
+				sql := createTableSQL(table, defMap[table], orderMap[table])
 				name := fmt.Sprintf("%s_create_%s_table.up.sql", ts, table)
 				if !duplicateContent(dir, fmt.Sprintf("*_create_%s_table.up.sql", table), sql) {
 					if err := os.WriteFile(filepath.Join(dir, name), []byte(sql+"\n"), 0o644); err != nil {
@@ -766,8 +821,8 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 			idx++
 			var stmts []string
 			for _, c := range orderMap[table] {
-				if t, ok := added[c]; ok {
-					stmts = append(stmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", table, c, t))
+				if _, ok := added[c]; ok {
+					stmts = append(stmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", table, c, defMap[table][c]))
 				}
 			}
 			sql := strings.Join(stmts, "\n")
