@@ -472,7 +472,11 @@ func Migrate(db *gorm.DB, dir string, models []interface{}) error {
 func buildModelSchema(models []interface{}) (schemaInfo, error) {
 	s := make(schemaInfo)
 
-	var collectFields func(reflect.Type, tableInfo)
+	var (
+		collectFields func(reflect.Type, tableInfo)
+		hasGormModel  bool
+	)
+
 	collectFields = func(t reflect.Type, cols tableInfo) {
 		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
@@ -485,9 +489,17 @@ func buildModelSchema(models []interface{}) (schemaInfo, error) {
 			if !f.IsExported() || f.Tag.Get("gorm") == "-" {
 				continue
 			}
-			// Recursively process embedded structs
-			if f.Anonymous && (f.Type.Kind() == reflect.Struct || (f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct)) {
-				collectFields(f.Type, cols)
+			ft := f.Type
+			if ft.Kind() == reflect.Pointer {
+				ft = ft.Elem()
+			}
+			// Handle embedded structs
+			if f.Anonymous && ft.Kind() == reflect.Struct {
+				if ft.PkgPath() == "gorm.io/gorm" && ft.Name() == "Model" {
+					hasGormModel = true
+					continue
+				}
+				collectFields(ft, cols)
 				continue
 			}
 			name := getTagValue(f.Tag.Get("gorm"), "column")
@@ -508,7 +520,24 @@ func buildModelSchema(models []interface{}) (schemaInfo, error) {
 		}
 		table := toSnakeCase(t.Name())
 		cols := make(tableInfo)
+		hasGormModel = false
 		collectFields(t, cols)
+
+		if hasGormModel {
+			if _, ok := cols["id"]; !ok {
+				cols["id"] = sqlTypeOf(reflect.TypeOf(uint(0)))
+			}
+			if _, ok := cols["created_at"]; !ok {
+				cols["created_at"] = sqlTypeOf(reflect.TypeOf(time.Time{}))
+			}
+			if _, ok := cols["updated_at"]; !ok {
+				cols["updated_at"] = sqlTypeOf(reflect.TypeOf(time.Time{}))
+			}
+			if _, ok := cols["deleted_at"]; !ok {
+				cols["deleted_at"] = sqlTypeOf(reflect.TypeOf(time.Time{}))
+			}
+		}
+
 		if len(cols) > 0 {
 			s[table] = cols
 		}
