@@ -469,15 +469,16 @@ func Migrate(db *gorm.DB, dir string, models []interface{}) error {
 }
 
 // buildModelSchema loads the schema info from struct models.
-func buildModelSchema(models []interface{}) (schemaInfo, error) {
+func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, error) {
 	s := make(schemaInfo)
+	orderMap := make(map[string][]string)
 
 	var (
-		collectFields func(reflect.Type, tableInfo)
+		collectFields func(reflect.Type, tableInfo, *[]string)
 		hasGormModel  bool
 	)
 
-	collectFields = func(t reflect.Type, cols tableInfo) {
+	collectFields = func(t reflect.Type, cols tableInfo, order *[]string) {
 		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
@@ -499,13 +500,14 @@ func buildModelSchema(models []interface{}) (schemaInfo, error) {
 					hasGormModel = true
 					continue
 				}
-				collectFields(ft, cols)
+				collectFields(ft, cols, order)
 				continue
 			}
 			name := getTagValue(f.Tag.Get("gorm"), "column")
 			if name == "" {
 				name = toSnakeCase(f.Name)
 			}
+			*order = append(*order, name)
 			cols[name] = sqlTypeOf(f.Type)
 		}
 	}
@@ -520,8 +522,9 @@ func buildModelSchema(models []interface{}) (schemaInfo, error) {
 		}
 		table := toSnakeCase(t.Name())
 		cols := make(tableInfo)
+		var order []string
 		hasGormModel = false
-		collectFields(t, cols)
+		collectFields(t, cols, &order)
 
 		if hasGormModel {
 			if _, ok := cols["id"]; !ok {
@@ -540,18 +543,38 @@ func buildModelSchema(models []interface{}) (schemaInfo, error) {
 
 		if len(cols) > 0 {
 			s[table] = cols
+			orderMap[table] = order
 		}
 	}
 
-	return s, nil
+	return s, orderMap, nil
 }
 
-func createTableSQL(table string, cols tableInfo) string {
+func createTableSQL(table string, cols tableInfo, order []string) string {
 	var defs []string
-	for c, t := range cols {
-		defs = append(defs, fmt.Sprintf("%s %s", c, t))
+	if len(order) == 0 {
+		for c, t := range cols {
+			defs = append(defs, fmt.Sprintf("%s %s", c, t))
+		}
+	} else {
+		for _, c := range order {
+			if t, ok := cols[c]; ok {
+				defs = append(defs, fmt.Sprintf("%s %s", c, t))
+			}
+		}
+		for c, t := range cols {
+			found := false
+			for _, oc := range order {
+				if c == oc {
+					found = true
+					break
+				}
+			}
+			if !found {
+				defs = append(defs, fmt.Sprintf("%s %s", c, t))
+			}
+		}
 	}
-	sort.Strings(defs)
 	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", table, strings.Join(defs, ",\n  "))
 }
 
@@ -711,7 +734,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 		return err
 	}
 
-	schema, err := buildModelSchema(models)
+	schema, orderMap, err := buildModelSchema(models)
 	if err != nil {
 		return err
 	}
@@ -725,7 +748,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 			if errors.Is(err, fs.ErrNotExist) {
 				ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
 				idx++
-				sql := createTableSQL(table, cols)
+				sql := createTableSQL(table, cols, orderMap[table])
 				name := fmt.Sprintf("%s_create_%s_table.up.sql", ts, table)
 				if !duplicateContent(dir, fmt.Sprintf("*_create_%s_table.up.sql", table), sql) {
 					if err := os.WriteFile(filepath.Join(dir, name), []byte(sql+"\n"), 0o644); err != nil {
@@ -742,8 +765,10 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 			ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
 			idx++
 			var stmts []string
-			for c, t := range added {
-				stmts = append(stmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", table, c, t))
+			for _, c := range orderMap[table] {
+				if t, ok := added[c]; ok {
+					stmts = append(stmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", table, c, t))
+				}
 			}
 			sql := strings.Join(stmts, "\n")
 			pattern := fmt.Sprintf("*_add_fields_to_%s_table.up.sql", table)
