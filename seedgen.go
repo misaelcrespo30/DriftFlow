@@ -58,6 +58,13 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		file := strings.ToLower(t.Name()) + ".seed.json"
 		path := filepath.Join(dir, file)
 
+		// Skip generation when the seed file already exists
+		if _, err := os.Stat(path); err == nil {
+			continue
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+
 		objs := make([]*orderedMap, 10)
 		for i := 0; i < 10; i++ {
 			obj := newOrderedMap()
