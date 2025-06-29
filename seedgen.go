@@ -23,10 +23,12 @@ func dummyValue(t reflect.Type, idx int, base time.Time) interface{} {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return idx + 1
+	case reflect.Float32, reflect.Float64:
+		return float64(idx + 1)
 	case reflect.String:
 		return fmt.Sprintf("value %d", idx+1)
 	default:
-		return nil
+		return reflect.Zero(t).Interface()
 	}
 }
 
@@ -56,12 +58,15 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		file := strings.ToLower(t.Name()) + ".seed.json"
 		path := filepath.Join(dir, file)
 
-		objs := make([]map[string]interface{}, 10)
+		objs := make([]*orderedMap, 10)
 		for i := 0; i < 10; i++ {
-			obj := make(map[string]interface{})
+			obj := newOrderedMap()
 			for j := 0; j < t.NumField(); j++ {
 				f := t.Field(j)
 				if !f.IsExported() {
+					continue
+				}
+				if f.Anonymous && f.Type.PkgPath() == "gorm.io/gorm" && f.Type.Name() == "Model" {
 					continue
 				}
 				gtag := f.Tag.Get("gorm")
@@ -78,11 +83,11 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 				}
 				if gens != nil {
 					if fn, ok := gens[name]; ok {
-						obj[name] = fn()
+						obj.set(name, fn())
 						continue
 					}
 				}
-				obj[name] = dummyValue(f.Type, i, base)
+				obj.set(name, dummyValue(f.Type, i, base))
 			}
 			objs[i] = obj
 		}
