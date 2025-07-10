@@ -44,7 +44,7 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
 	rootCmd.PersistentFlags().StringVar(&modelsDir, "models", cfg.ModelsDir, "models directory")
 
-	rootCmd.AddCommand(Commands...)
+	rootCmd.AddCommand(Commands(cfg)...)
 
 	return rootCmd
 }
@@ -327,4 +327,29 @@ func newCompareCommand() *cobra.Command {
 	_ = cmd.MarkFlagRequired("from")
 	_ = cmd.MarkFlagRequired("to")
 	return cmd
+}
+
+/////////////////////////////////////
+
+func Commands(cfg *config.Config) []*cobra.Command {
+	// Sobrescribe las variables globales para compatibilidad con funciones actuales
+	dsn = cfg.DSN
+	driver = cfg.Driver
+	migDir = cfg.MigDir
+	seedDir = cfg.SeedDir
+	modelsDir = cfg.ModelsDir
+
+	return []*cobra.Command{
+		newUpCommand(),
+		newDownCommand(),
+		newUndoCommand(),
+		newRollbackCommand(),
+		newSeedCommand(),
+		newSeedgenCommand(),
+		newGenerateCommand(),
+		newMigrateCommand(),
+		newValidateCommand(),
+		newAuditCommand(),
+		newCompareCommand(),
+	}
 }

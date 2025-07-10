@@ -371,14 +371,14 @@
         <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751231514448" />
+              <option name="lastModified" value="1752179175697" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/cli/registry.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751143659473" />
+              <option name="lastModified" value="1752179121276" />
             </ScannedPath>
           </value>
         </entry>
@@ -680,13 +680,6 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/internal/state/state.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751233272760" />
-            </ScannedPath>
-          </value>
-        </entry>
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
@@ -856,6 +849,6 @@
         <entry key="unimplemented_matter_status_service_server" value="UnimplementedMatterStatusServiceServer" />
       </map>
     </option>
-    <option name="lastTimeChecked" value="1751226369601" />
+    <option name="lastTimeChecked" value="1752178859846" />
   </component>
 </project>

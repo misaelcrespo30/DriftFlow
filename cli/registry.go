@@ -1,8 +1,6 @@
 package cli
 
-import "github.com/spf13/cobra"
-
-var Commands = []*cobra.Command{
+/*var Commands = []*cobra.Command{
 	newUpCommand(),
 	newDownCommand(),
 	newUndoCommand(),
@@ -14,4 +12,4 @@ var Commands = []*cobra.Command{
 	newValidateCommand(),
 	newAuditCommand(),
 	newCompareCommand(),
-}
+}*/
