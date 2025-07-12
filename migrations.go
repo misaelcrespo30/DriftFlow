@@ -849,10 +849,24 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 		return err
 	}
 
+	// Preserve the order of the provided models when generating files
+	var tablesInOrder []string
+	for _, m := range models {
+		t := reflect.TypeOf(m)
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		tbl := gormTableName(t)
+		if _, ok := schema[tbl]; ok {
+			tablesInOrder = append(tablesInOrder, tbl)
+		}
+	}
+
 	now := time.Now().UTC()
 	idx := 0
 
-	for table, cols := range schema {
+	for _, table := range tablesInOrder {
+		cols := schema[table]
 		existing, err := loadTableState(dir, table)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
