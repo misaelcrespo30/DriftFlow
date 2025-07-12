@@ -533,17 +533,24 @@ func Migrate(db *gorm.DB, dir string, models []interface{}) error {
 }
 
 // buildModelSchema loads the schema info from struct models.
-func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, map[string]tableInfo, error) {
+type foreignKeyInfo struct {
+	Column    string
+	RefTable  string
+	RefColumn string
+}
+
+func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, map[string]tableInfo, map[string][]foreignKeyInfo, error) {
 	s := make(schemaInfo)
 	orderMap := make(map[string][]string)
 	defMap := make(map[string]tableInfo)
+	fkMap := make(map[string][]foreignKeyInfo)
 
 	var (
-		collectFields func(reflect.Type, tableInfo, tableInfo, *[]string)
+		collectFields func(reflect.Type, tableInfo, tableInfo, *[]string, string)
 		hasGormModel  bool
 	)
 
-	collectFields = func(t reflect.Type, cols tableInfo, defs tableInfo, order *[]string) {
+	collectFields = func(t reflect.Type, cols tableInfo, defs tableInfo, order *[]string, tbl string) {
 		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
@@ -565,7 +572,7 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 					hasGormModel = true
 					continue
 				}
-				collectFields(ft, cols, defs, order)
+				collectFields(ft, cols, defs, order, tbl)
 				continue
 			}
 			name := getTagValue(f.Tag.Get("gorm"), "column")
@@ -576,6 +583,33 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 			base, full := columnDef(f)
 			cols[name] = base
 			defs[name] = full
+
+			// Foreign key relations
+			if (ft.Kind() == reflect.Struct) && !f.Anonymous {
+				fkField := getTagValue(f.Tag.Get("gorm"), "foreignKey")
+				if fkField != "" {
+					refTbl := gormTableName(ft)
+					refCol := getTagValue(f.Tag.Get("gorm"), "references")
+					if refCol == "" {
+						refCol = "id"
+					} else {
+						refCol = toSnakeCase(refCol)
+					}
+
+					fkFields := strings.Split(fkField, ",")
+					for _, fk := range fkFields {
+						fk = strings.TrimSpace(fk)
+						fkCol := toSnakeCase(fk)
+						if fld, ok := t.FieldByName(fk); ok {
+							colName := getTagValue(fld.Tag.Get("gorm"), "column")
+							if colName != "" {
+								fkCol = colName
+							}
+						}
+						fkMap[tbl] = append(fkMap[tbl], foreignKeyInfo{Column: fkCol, RefTable: refTbl, RefColumn: refCol})
+					}
+				}
+			}
 		}
 	}
 
@@ -592,7 +626,7 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		defs := make(tableInfo)
 		var order []string
 		hasGormModel = false
-		collectFields(t, cols, defs, &order)
+		collectFields(t, cols, defs, &order, table)
 
 		if hasGormModel {
 			if _, ok := cols["id"]; !ok {
@@ -620,10 +654,10 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		}
 	}
 
-	return s, orderMap, defMap, nil
+	return s, orderMap, defMap, fkMap, nil
 }
 
-func createTableSQL(table string, cols tableInfo, order []string) string {
+func createTableSQL(table string, cols tableInfo, order []string, fks []foreignKeyInfo) string {
 	var defs []string
 	if len(order) == 0 {
 		for c, t := range cols {
@@ -647,6 +681,9 @@ func createTableSQL(table string, cols tableInfo, order []string) string {
 				defs = append(defs, fmt.Sprintf("%s %s", c, t))
 			}
 		}
+	}
+	for _, fk := range fks {
+		defs = append(defs, fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", fk.Column, fk.RefTable, fk.RefColumn))
 	}
 	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", table, strings.Join(defs, ",\n  "))
 }
@@ -807,7 +844,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 		return err
 	}
 
-	schema, orderMap, defMap, err := buildModelSchema(models)
+	schema, orderMap, defMap, fkMap, err := buildModelSchema(models)
 	if err != nil {
 		return err
 	}
@@ -821,7 +858,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 			if errors.Is(err, fs.ErrNotExist) {
 				ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
 				idx++
-				sql := createTableSQL(table, defMap[table], orderMap[table])
+				sql := createTableSQL(table, defMap[table], orderMap[table], fkMap[table])
 				name := fmt.Sprintf("%s_create_%s_table.up.sql", ts, table)
 				if !duplicateContent(dir, fmt.Sprintf("*_create_%s_table.up.sql", table), sql) {
 					if err := os.WriteFile(filepath.Join(dir, name), []byte(sql+"\n"), 0o644); err != nil {
