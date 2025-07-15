@@ -21,11 +21,12 @@ import (
 )
 
 var (
-	dsn       string
-	driver    string
-	migDir    string
-	seedDir   string
-	modelsDir string
+	dsn        string
+	driver     string
+	migDir     string
+	seedGenDir string
+	seedRunDir string
+	modelsDir  string
 )
 
 // NewRootCommand builds the DriftFlow CLI root command. It can be used by
@@ -35,13 +36,15 @@ func NewRootCommand() *cobra.Command {
 	dsn = cfg.DSN
 	driver = cfg.Driver
 	migDir = cfg.MigDir
-	seedDir = cfg.SeedDir
+	seedGenDir = cfg.SeedGenDir
+	seedRunDir = cfg.SeedRunDir
 
 	rootCmd := &cobra.Command{Use: "driftflow"}
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", cfg.DSN, "database DSN")
 	rootCmd.PersistentFlags().StringVar(&driver, "driver", cfg.Driver, "database driver")
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
-	rootCmd.PersistentFlags().StringVar(&seedDir, "seeds", cfg.SeedDir, "seed data directory")
+	rootCmd.PersistentFlags().StringVar(&seedGenDir, "seeds", cfg.SeedGenDir, "seed data directory")
+	rootCmd.PersistentFlags().StringVar(&seedRunDir, "seeds", cfg.SeedRunDir, "seed data directory")
 	rootCmd.PersistentFlags().StringVar(&modelsDir, "models", cfg.ModelsDir, "models directory")
 
 	rootCmd.AddCommand(Commands(cfg)...)
@@ -149,17 +152,18 @@ func newRollbackCommand() *cobra.Command {
 func newSeedCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "seed",
-		Short: "Execute JSON seed files",
+		Short: "Ejecuta los seeders del proyecto registrado",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			db, err := openDB()
 			if err != nil {
 				return err
 			}
-			models, err := helpers.LoadModels()
+
 			if err != nil {
 				return err
 			}
-			return driftflow.SeedFromJSON(db, seedDir, models)
+			return driftflow.Seed(db, seedRunDir)
+
 		},
 	}
 }
@@ -173,7 +177,7 @@ func newSeedgenCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return driftflow.GenerateSeedTemplates(models, seedDir)
+			return driftflow.GenerateSeedTemplates(models, seedGenDir)
 		},
 	}
 }
@@ -239,16 +243,27 @@ func newAuditListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			logs, err := driftflow.ListAuditLog(db)
 			if err != nil {
 				return err
 			}
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tVERSION\tCOMMIT\tACTION\tUSER\tHOST\tLOGGED_AT")
-			for _, l := range logs {
-				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", l.ID, l.Version, l.Commit, l.Action, l.User, l.Host, l.LoggedAt.Format(time.RFC3339))
+			//  Manejo de error en encabezado
+			if _, err := fmt.Fprintln(w, "ID\tVERSION\tCOMMIT\tACTION\tUSER\tHOST\tLOGGED_AT"); err != nil {
+				return fmt.Errorf("error escribiendo encabezado: %w", err)
 			}
-			w.Flush()
+			for _, l := range logs {
+				if _, err := fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n",
+					l.ID, l.Version, l.Commit, l.Action, l.User, l.Host, l.LoggedAt.Format(time.RFC3339),
+				); err != nil {
+					return fmt.Errorf("error escribiendo fila de log ID %d: %w", l.ID, err)
+				}
+			}
+			// Manejo de error en Flush
+			if err := w.Flush(); err != nil {
+				return fmt.Errorf("error al vaciar salida del tabwriter: %w", err)
+			}
 			return nil
 		},
 	}
@@ -256,35 +271,54 @@ func newAuditListCommand() *cobra.Command {
 
 func newAuditExportCommand() *cobra.Command {
 	var jsonOut bool
+
 	cmd := &cobra.Command{
 		Use:   "export",
 		Short: "Export audit log",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			db, err := openDB()
 			if err != nil {
-				return err
+				return fmt.Errorf("error al abrir la conexión a la base de datos: %w", err)
 			}
+
 			logs, err := driftflow.ListAuditLog(db)
 			if err != nil {
-				return err
+				return fmt.Errorf("error al obtener logs de auditoría: %w", err)
 			}
+
 			if jsonOut {
 				b, err := json.MarshalIndent(logs, "", "  ")
 				if err != nil {
-					return err
+					return fmt.Errorf("error al serializar logs a JSON: %w", err)
 				}
-				fmt.Println(string(b))
+				_, err = fmt.Println(string(b))
+				if err != nil {
+					return fmt.Errorf("error al imprimir salida JSON: %w", err)
+				}
 				return nil
 			}
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tVERSION\tCOMMIT\tACTION\tUSER\tHOST\tLOGGED_AT")
-			for _, l := range logs {
-				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n", l.ID, l.Version, l.Commit, l.Action, l.User, l.Host, l.LoggedAt.Format(time.RFC3339))
+
+			if _, err := fmt.Fprintln(w, "ID\tVERSION\tCOMMIT\tACTION\tUSER\tHOST\tLOGGED_AT"); err != nil {
+				return fmt.Errorf("error al escribir encabezado: %w", err)
 			}
-			w.Flush()
+
+			for _, l := range logs {
+				if _, err := fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\t%s\n",
+					l.ID, l.Version, l.Commit, l.Action, l.User, l.Host, l.LoggedAt.Format(time.RFC3339)); err != nil {
+					return fmt.Errorf("error al escribir fila de log ID %d: %w", l.ID, err)
+				}
+			}
+
+			if err := w.Flush(); err != nil {
+				return fmt.Errorf("error al vaciar salida del tabwriter: %w", err)
+			}
+
 			return nil
 		},
 	}
+
 	cmd.Flags().BoolVar(&jsonOut, "json", false, "output as JSON")
 	return cmd
 }
@@ -336,7 +370,8 @@ func Commands(cfg *config.Config) []*cobra.Command {
 	dsn = cfg.DSN
 	driver = cfg.Driver
 	migDir = cfg.MigDir
-	seedDir = cfg.SeedDir
+	seedGenDir = cfg.SeedGenDir
+	seedRunDir = cfg.SeedRunDir
 	modelsDir = cfg.ModelsDir
 
 	return []*cobra.Command{

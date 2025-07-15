@@ -2,6 +2,7 @@ package driftflow
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -17,21 +18,37 @@ type Seeder interface {
 	Seed(db *gorm.DB, filePath string) error
 }
 
+var projectSeederRegistry func() []Seeder
+
+func SetSeederRegistry(fn func() []Seeder) {
+	projectSeederRegistry = fn
+}
+
 // Seed executes the Seed method of each provided Seeder using files in dir.
 // The file name is derived from the seeder type name in lower case with a .json
 // extension (e.g. Bookmark -> bookmark.json).
-func Seed(db *gorm.DB, dir string, seeders []Seeder) error {
+func Seed(db *gorm.DB, dir string) error {
+	if projectSeederRegistry == nil {
+		return fmt.Errorf(" No se registró ningún seeder. Usá driftflow.SetSeederRegistry(...) desde tu proyecto")
+	}
+
+	seeders := projectSeederRegistry()
+
 	if err := config.ValidateDir(dir); err != nil {
 		return err
 	}
 	_ = EnsureAuditTable(db)
+
 	for _, s := range seeders {
 		t := reflect.TypeOf(s)
 		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
-		file := strings.ToLower(t.Name()) + ".json"
+
+		baseName := strings.ToLower(strings.TrimSuffix(t.Name(), "Seeder"))
+		file := baseName + ".seed.json"
 		path := filepath.Join(dir, file)
+
 		if err := s.Seed(db, path); err != nil {
 			return err
 		}

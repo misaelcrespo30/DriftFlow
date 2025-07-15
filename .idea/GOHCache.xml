@@ -268,6 +268,13 @@
             </set>
           </value>
         </entry>
+        <entry key="foreignKeyInfo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/migrations.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="gormActivityRepo">
           <value>
             <set>
@@ -371,7 +378,7 @@
         <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1752179175697" />
+              <option name="lastModified" value="1752615080045" />
             </ScannedPath>
           </value>
         </entry>
@@ -399,7 +406,7 @@
         <entry key="file://$PROJECT_DIR$/config/config.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751223941904" />
+              <option name="lastModified" value="1752615608290" />
               <option name="schema">
                 <list>
                   <option value="Config" />
@@ -418,7 +425,7 @@
         <entry key="file://$PROJECT_DIR$/config/env.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751143659476" />
+              <option name="lastModified" value="1752613065534" />
             </ScannedPath>
           </value>
         </entry>
@@ -683,12 +690,13 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751223941910" />
+              <option name="lastModified" value="1752612091920" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
                   <option value="alter" />
                   <option value="change" />
+                  <option value="foreignKeyInfo" />
                 </list>
               </option>
             </ScannedPath>
@@ -750,14 +758,14 @@
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751164913496" />
+              <option name="lastModified" value="1752611669470" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/seedgen.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1751237576154" />
+              <option name="lastModified" value="1752612496825" />
             </ScannedPath>
           </value>
         </entry>
@@ -807,6 +815,7 @@
         <entry key="create_matter_request" value="CreateMatterRequest" />
         <entry key="create_matter_status_request" value="CreateMatterStatusRequest" />
         <entry key="field_history" value="FieldHistory" />
+        <entry key="foreign_key_info" value="foreignKeyInfo" />
         <entry key="get_matter_activity_category_request" value="GetMatterActivityCategoryRequest" />
         <entry key="get_matter_activity_request" value="GetMatterActivityRequest" />
         <entry key="get_matter_related_request" value="GetMatterRelatedRequest" />
@@ -849,6 +858,6 @@
         <entry key="unimplemented_matter_status_service_server" value="UnimplementedMatterStatusServiceServer" />
       </map>
     </option>
-    <option name="lastTimeChecked" value="1752178859846" />
+    <option name="lastTimeChecked" value="1752610346124" />
   </component>
 </project>

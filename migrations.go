@@ -835,7 +835,7 @@ func duplicateContent(dir, pattern, sql string) bool {
 // writes new migration files for any differences found.
 func GenerateModelMigrations(models []interface{}, dir string) error {
 	if dir == "" {
-		dir = os.Getenv("MIGRATIONS_PATH")
+		dir = os.Getenv("MIG_DIR")
 		if dir == "" {
 			dir = "migrations"
 		}

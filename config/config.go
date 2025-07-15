@@ -12,11 +12,12 @@ import (
 
 // Config contains the minimal configuration required by the DriftFlow CLI.
 type Config struct {
-	DSN       string `json:"dsn"`
-	Driver    string `json:"driver"`
-	MigDir    string `json:"mig_dir"`
-	SeedDir   string `json:"seed_dir"`
-	ModelsDir string `json:"models_dir"`
+	DSN        string `json:"dsn"`
+	Driver     string `json:"driver"`
+	MigDir     string `json:"mig_dir"`
+	SeedGenDir string `json:"seed_gen_dir"`
+	SeedRunDir string `json:"seed_run_dir"`
+	ModelsDir  string `json:"models_dir"`
 }
 
 // Load reads environment variables (from the system or a .env file) and
@@ -26,17 +27,18 @@ func Load() *Config {
 	_ = loadEnvFile()
 
 	driver := getEnvOrDefault("DB_TYPE", "postgres")
-	migPath := os.Getenv("MIGRATIONS_PATH")
+	migPath := os.Getenv("MIG_DIR")
 	if migPath == "" {
 		migPath = getEnvOrDefault("MIG_DIR", "migrations")
 	}
 
 	cfg := &Config{
-		DSN:       os.Getenv("DSN"),
-		Driver:    driver,
-		MigDir:    migPath,
-		SeedDir:   getEnvOrDefault("SEED_DIR", "seeds"),
-		ModelsDir: getEnvOrDefault("MODELS_DIR", "models"),
+		DSN:        os.Getenv("DSN"),
+		Driver:     driver,
+		MigDir:     migPath,
+		SeedGenDir: getEnvOrDefault("SEED_GEN_DIR", "internal/database/data"),
+		SeedRunDir: getEnvOrDefault("SEED_RUN_DIR", "internal/database/seed"),
+		ModelsDir:  getEnvOrDefault("MODELS_DIR", "internal/models"),
 	}
 
 	if cfg.DSN == "" {
