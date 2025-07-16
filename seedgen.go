@@ -47,7 +47,7 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		dir = os.Getenv("SEED_GEN_DIR")
 		if strings.TrimSpace(dir) == "" {
 			dir = "seed"
-			fmt.Println("No se definió 'SEED_DIR', se usará ruta por defecto: ./seed")
+			fmt.Println("No se definió 'SEED_GEN_DIR', se usará ruta por defecto: ./seed")
 		}
 	}
 
