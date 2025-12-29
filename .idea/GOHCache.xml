@@ -7,42 +7,6 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/config/config.go" />
-              <option value="file://$PROJECT_DIR$/internal/config/config.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="CreateMatterActivityCategoryRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="CreateMatterActivityRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="CreateMatterRelatedRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="CreateMatterRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="CreateMatterStatusRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
             </set>
           </value>
         </entry>
@@ -53,155 +17,10 @@
             </set>
           </value>
         </entry>
-        <entry key="GRPCServer">
+        <entry key="Plan">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/internal/handler/grpc_server.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="GetMatterActivityCategoryRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="GetMatterActivityRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="GetMatterRelatedRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="GetMatterRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="GetMatterStatusRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterActivitiesRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterActivitiesResponse">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterActivityCategoriesRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterActivityCategoriesResponse">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterRelatedRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterRelatedResponse">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterStatusesRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMatterStatusesResponse">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMattersRequest">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="ListMattersResponse">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="Matter">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/models/matter.go" />
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="MatterActivity">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/models/matter_activity.go" />
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="MatterActivityCategory">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/models/matter_activity_category.go" />
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="MatterRelated">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/models/matter_related.go" />
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="MatterStatus">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/models/matter_status.go" />
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/plan.go" />
             </set>
           </value>
         </entry>
@@ -219,38 +38,17 @@
             </set>
           </value>
         </entry>
-        <entry key="UnimplementedMatterActivityCategoryServiceServer">
+        <entry key="Tenant">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant.go" />
             </set>
           </value>
         </entry>
-        <entry key="UnimplementedMatterActivityServiceServer">
+        <entry key="TenantUser">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="UnimplementedMatterRelatedServiceServer">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="UnimplementedMatterServiceServer">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="UnimplementedMatterStatusServiceServer">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/proto/matter.pb.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant_user.go" />
             </set>
           </value>
         </entry>
@@ -272,76 +70,6 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/migrations.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="gormActivityRepo">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/repository/matter_activity_repository.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="gormCategoryRepo">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/repository/matter_activity_category_repository.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="gormMatterRepo">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/repository/matter_repository.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="gormRelatedRepo">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/repository/matter_related_repository.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="gormStatusRepo">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/repository/matter_status_repository.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="matterActivityCategoryService">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/service/matter_activity_category_service.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="matterActivityService">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/service/matter_activity_service.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="matterRelatedService">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/service/matter_related_service.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="matterService">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/service/matter_service.go" />
-            </set>
-          </value>
-        </entry>
-        <entry key="matterStatusService">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/internal/service/matter_status_service.go" />
             </set>
           </value>
         </entry>
@@ -379,13 +107,6 @@
           <value>
             <ScannedPath>
               <option name="lastModified" value="1752628009183" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/cli/registry.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1752179121276" />
             </ScannedPath>
           </value>
         </entry>
@@ -476,221 +197,10 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/internal/config/config.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751223941905" />
-              <option name="schema">
-                <list>
-                  <option value="Config" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/handler/grpc_server.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133700189" />
-              <option name="schema">
-                <list>
-                  <option value="GRPCServer" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/models/matter.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751224679083" />
-              <option name="schema">
-                <list>
-                  <option value="Matter" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/models/matter_activity.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751224679085" />
-              <option name="schema">
-                <list>
-                  <option value="MatterActivity" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/models/matter_activity_category.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751224679085" />
-              <option name="schema">
-                <list>
-                  <option value="MatterActivityCategory" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/models/matter_related.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751223941908" />
-              <option name="schema">
-                <list>
-                  <option value="MatterRelated" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/models/matter_status.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751223941910" />
-              <option name="schema">
-                <list>
-                  <option value="MatterStatus" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/models/models.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750709584849" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/repository/matter_activity_category_repository.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133923571" />
-              <option name="schema">
-                <list>
-                  <option value="gormCategoryRepo" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/repository/matter_activity_repository.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133923563" />
-              <option name="schema">
-                <list>
-                  <option value="gormActivityRepo" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/repository/matter_related_repository.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133936190" />
-              <option name="schema">
-                <list>
-                  <option value="gormRelatedRepo" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/repository/matter_repository.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133936182" />
-              <option name="schema">
-                <list>
-                  <option value="gormMatterRepo" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/repository/matter_status_repository.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133942806" />
-              <option name="schema">
-                <list>
-                  <option value="gormStatusRepo" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/service/matter_activity_category_service.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133990055" />
-              <option name="schema">
-                <list>
-                  <option value="matterActivityCategoryService" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/service/matter_activity_service.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133990064" />
-              <option name="schema">
-                <list>
-                  <option value="matterActivityService" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/service/matter_related_service.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133990070" />
-              <option name="schema">
-                <list>
-                  <option value="matterRelatedService" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/service/matter_service.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751133990079" />
-              <option name="schema">
-                <list>
-                  <option value="matterService" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/internal/service/matter_status_service.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1751134004337" />
-              <option name="schema">
-                <list>
-                  <option value="matterStatusService" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1752612091920" />
+              <option name="lastModified" value="1767037793512" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
@@ -709,47 +219,6 @@
               <option name="schema">
                 <list>
                   <option value="orderedMap" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/proto/matter.pb.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1750785782627" />
-              <option name="schema">
-                <list>
-                  <option value="Matter" />
-                  <option value="ListMattersRequest" />
-                  <option value="ListMattersResponse" />
-                  <option value="GetMatterRequest" />
-                  <option value="CreateMatterRequest" />
-                  <option value="UnimplementedMatterServiceServer" />
-                  <option value="MatterActivity" />
-                  <option value="ListMatterActivitiesRequest" />
-                  <option value="ListMatterActivitiesResponse" />
-                  <option value="GetMatterActivityRequest" />
-                  <option value="CreateMatterActivityRequest" />
-                  <option value="UnimplementedMatterActivityServiceServer" />
-                  <option value="MatterRelated" />
-                  <option value="ListMatterRelatedRequest" />
-                  <option value="ListMatterRelatedResponse" />
-                  <option value="GetMatterRelatedRequest" />
-                  <option value="CreateMatterRelatedRequest" />
-                  <option value="UnimplementedMatterRelatedServiceServer" />
-                  <option value="MatterStatus" />
-                  <option value="ListMatterStatusesRequest" />
-                  <option value="ListMatterStatusesResponse" />
-                  <option value="GetMatterStatusRequest" />
-                  <option value="CreateMatterStatusRequest" />
-                  <option value="UnimplementedMatterStatusServiceServer" />
-                  <option value="MatterActivityCategory" />
-                  <option value="ListMatterActivityCategoriesRequest" />
-                  <option value="ListMatterActivityCategoriesResponse" />
-                  <option value="GetMatterActivityCategoryRequest" />
-                  <option value="CreateMatterActivityCategoryRequest" />
-                  <option value="UnimplementedMatterActivityCategoryServiceServer" />
                 </list>
               </option>
             </ScannedPath>
@@ -802,6 +271,42 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/plan.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767030530963" />
+              <option name="schema">
+                <list>
+                  <option value="Plan" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767030428004" />
+              <option name="schema">
+                <list>
+                  <option value="Tenant" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant_user.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767029559105" />
+              <option name="schema">
+                <list>
+                  <option value="TenantUser" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
       </map>
     </option>
     <option name="tableStructMapping">
@@ -809,55 +314,17 @@
         <entry key="alter" value="alter" />
         <entry key="change" value="change" />
         <entry key="config" value="Config" />
-        <entry key="create_matter_activity_category_request" value="CreateMatterActivityCategoryRequest" />
-        <entry key="create_matter_activity_request" value="CreateMatterActivityRequest" />
-        <entry key="create_matter_related_request" value="CreateMatterRelatedRequest" />
-        <entry key="create_matter_request" value="CreateMatterRequest" />
-        <entry key="create_matter_status_request" value="CreateMatterStatusRequest" />
         <entry key="field_history" value="FieldHistory" />
         <entry key="foreign_key_info" value="foreignKeyInfo" />
-        <entry key="get_matter_activity_category_request" value="GetMatterActivityCategoryRequest" />
-        <entry key="get_matter_activity_request" value="GetMatterActivityRequest" />
-        <entry key="get_matter_related_request" value="GetMatterRelatedRequest" />
-        <entry key="get_matter_request" value="GetMatterRequest" />
-        <entry key="get_matter_status_request" value="GetMatterStatusRequest" />
-        <entry key="gorm_activity_repo" value="gormActivityRepo" />
-        <entry key="gorm_category_repo" value="gormCategoryRepo" />
-        <entry key="gorm_matter_repo" value="gormMatterRepo" />
-        <entry key="gorm_related_repo" value="gormRelatedRepo" />
-        <entry key="gorm_status_repo" value="gormStatusRepo" />
-        <entry key="grpc_server" value="GRPCServer" />
-        <entry key="list_matter_activities_request" value="ListMatterActivitiesRequest" />
-        <entry key="list_matter_activities_response" value="ListMatterActivitiesResponse" />
-        <entry key="list_matter_activity_categories_request" value="ListMatterActivityCategoriesRequest" />
-        <entry key="list_matter_activity_categories_response" value="ListMatterActivityCategoriesResponse" />
-        <entry key="list_matter_related_request" value="ListMatterRelatedRequest" />
-        <entry key="list_matter_related_response" value="ListMatterRelatedResponse" />
-        <entry key="list_matter_statuses_request" value="ListMatterStatusesRequest" />
-        <entry key="list_matter_statuses_response" value="ListMatterStatusesResponse" />
-        <entry key="list_matters_request" value="ListMattersRequest" />
-        <entry key="list_matters_response" value="ListMattersResponse" />
-        <entry key="matter" value="Matter" />
-        <entry key="matter_activity" value="MatterActivity" />
-        <entry key="matter_activity_category" value="MatterActivityCategory" />
-        <entry key="matter_activity_category_service" value="matterActivityCategoryService" />
-        <entry key="matter_activity_service" value="matterActivityService" />
-        <entry key="matter_related" value="MatterRelated" />
-        <entry key="matter_related_service" value="matterRelatedService" />
-        <entry key="matter_service" value="matterService" />
-        <entry key="matter_status" value="MatterStatus" />
-        <entry key="matter_status_service" value="matterStatusService" />
         <entry key="ordered_map" value="orderedMap" />
+        <entry key="plan" value="Plan" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
+        <entry key="tenant" value="Tenant" />
+        <entry key="tenant_user" value="TenantUser" />
         <entry key="tmpl_model" value="tmplModel" />
-        <entry key="unimplemented_matter_activity_category_service_server" value="UnimplementedMatterActivityCategoryServiceServer" />
-        <entry key="unimplemented_matter_activity_service_server" value="UnimplementedMatterActivityServiceServer" />
-        <entry key="unimplemented_matter_related_service_server" value="UnimplementedMatterRelatedServiceServer" />
-        <entry key="unimplemented_matter_service_server" value="UnimplementedMatterServiceServer" />
-        <entry key="unimplemented_matter_status_service_server" value="UnimplementedMatterStatusServiceServer" />
       </map>
     </option>
-    <option name="lastTimeChecked" value="1752610346124" />
+    <option name="lastTimeChecked" value="1767025088260" />
   </component>
 </project>

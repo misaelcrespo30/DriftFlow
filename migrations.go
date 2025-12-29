@@ -550,6 +550,122 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		hasGormModel  bool
 	)
 
+	// Helpers
+	isTimeType := func(t reflect.Type) bool {
+		// Covers time.Time and also types named "Time" in package "time"
+		return t.Kind() == reflect.Struct && t.PkgPath() == "time" && t.Name() == "Time"
+	}
+
+	isGormDeletedAt := func(t reflect.Type) bool {
+		return t.Kind() == reflect.Struct && t.PkgPath() == "gorm.io/gorm" && t.Name() == "DeletedAt"
+	}
+
+	// Determines whether a struct/slice field should be treated as a relationship (not a column)
+	isRelationField := func(field reflect.StructField, ft reflect.Type) bool {
+		gtag := field.Tag.Get("gorm")
+		if gtag == "" {
+			return false
+		}
+
+		// Common relation directives in GORM tags
+		if getTagValue(gtag, "foreignKey") != "" ||
+			getTagValue(gtag, "references") != "" ||
+			getTagValue(gtag, "many2many") != "" ||
+			getTagValue(gtag, "polymorphic") != "" ||
+			getTagValue(gtag, "joinForeignKey") != "" ||
+			getTagValue(gtag, "joinReferences") != "" {
+			return true
+		}
+
+		// Slices are typically has-many relations unless explicitly marked otherwise
+		if ft.Kind() == reflect.Slice {
+			return true
+		}
+
+		return false
+	}
+
+	// Resolve "references:<FieldName>" to the actual referenced column name.
+	// - If the referenced struct field has gorm:"column:..." -> use that.
+	// - Else fall back to snake_case(FieldName), but correctly handle "ID" as "id"
+	resolveRefColumn := func(refType reflect.Type, refFieldName string) string {
+		if refType.Kind() == reflect.Pointer {
+			refType = refType.Elem()
+		}
+		if refType.Kind() != reflect.Struct {
+			return "id"
+		}
+
+		// Default if no references specified
+		if refFieldName == "" {
+			// Prefer explicit "ID" if present, else "id"
+			if _, ok := refType.FieldByName("ID"); ok {
+				if rf, ok2 := refType.FieldByName("ID"); ok2 {
+					colName := getTagValue(rf.Tag.Get("gorm"), "column")
+					if colName != "" {
+						return colName
+					}
+				}
+				return "id"
+			}
+			return "id"
+		}
+
+		// Find the referenced field in the referenced struct
+		if rf, ok := refType.FieldByName(refFieldName); ok {
+			colName := getTagValue(rf.Tag.Get("gorm"), "column")
+			if colName != "" {
+				return colName
+			}
+			// If no column tag, convert field name safely
+			if refFieldName == "ID" {
+				return "id"
+			}
+			return toSnakeCase(refFieldName)
+		}
+
+		// Fallback
+		if refFieldName == "ID" {
+			return "id"
+		}
+		return toSnakeCase(refFieldName)
+	}
+
+	// Resolve local FK column by Go field name, respecting gorm:"column:..."
+	resolveLocalFKColumn := func(parentType reflect.Type, fkFieldName string) string {
+		fkFieldName = strings.TrimSpace(fkFieldName)
+		if fkFieldName == "" {
+			return ""
+		}
+
+		// Default snake_case of Go field name
+		fkCol := toSnakeCase(fkFieldName)
+
+		// If the parent struct has a field with that name, and it has column tag, use it
+		if fld, ok := parentType.FieldByName(fkFieldName); ok {
+			colName := getTagValue(fld.Tag.Get("gorm"), "column")
+			if colName != "" {
+				fkCol = colName
+			}
+		} else {
+			// Common case: fkFieldName is "UserID"/"TenantID"/etc.
+			// If your struct uses "UserID" but references might specify "UserId" etc.
+			// We'll try a case-insensitive match:
+			for i := 0; i < parentType.NumField(); i++ {
+				f := parentType.Field(i)
+				if strings.EqualFold(f.Name, fkFieldName) {
+					colName := getTagValue(f.Tag.Get("gorm"), "column")
+					if colName != "" {
+						return colName
+					}
+					return toSnakeCase(f.Name)
+				}
+			}
+		}
+
+		return fkCol
+	}
+
 	collectFields = func(t reflect.Type, cols tableInfo, defs tableInfo, order *[]string, tbl string) {
 		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
@@ -557,15 +673,18 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		if t.Kind() != reflect.Struct {
 			return
 		}
+
 		for i := 0; i < t.NumField(); i++ {
 			f := t.Field(i)
 			if !f.IsExported() || f.Tag.Get("gorm") == "-" {
 				continue
 			}
+
 			ft := f.Type
 			if ft.Kind() == reflect.Pointer {
 				ft = ft.Elem()
 			}
+
 			// Handle embedded structs
 			if f.Anonymous && ft.Kind() == reflect.Struct {
 				if ft.PkgPath() == "gorm.io/gorm" && ft.Name() == "Model" {
@@ -575,41 +694,54 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 				collectFields(ft, cols, defs, order, tbl)
 				continue
 			}
-			name := getTagValue(f.Tag.Get("gorm"), "column")
+
+			gtag := f.Tag.Get("gorm")
+
+			// ✅ If relationship field -> build FK (if any) and SKIP creating a column
+			// Also skip special struct fields like time.Time and gorm.DeletedAt as columns (they are columns, not relations)
+			if (ft.Kind() == reflect.Struct || ft.Kind() == reflect.Slice) &&
+				!isTimeType(ft) &&
+				!isGormDeletedAt(ft) &&
+				isRelationField(f, ft) {
+
+				// Only struct relations can define FK directives in this style
+				if ft.Kind() == reflect.Struct {
+					fkField := getTagValue(gtag, "foreignKey")
+					if fkField != "" {
+						refTbl := gormTableName(ft)
+						refFieldName := getTagValue(gtag, "references") // this is Go field name in referenced struct
+						refCol := resolveRefColumn(ft, refFieldName)
+
+						fkFields := strings.Split(fkField, ",")
+						for _, fk := range fkFields {
+							fkCol := resolveLocalFKColumn(t, fk)
+							if fkCol == "" {
+								continue
+							}
+							fkMap[tbl] = append(fkMap[tbl], foreignKeyInfo{
+								Column:    fkCol,
+								RefTable:  refTbl,
+								RefColumn: refCol,
+							})
+						}
+					}
+				}
+
+				// ✅ Critical: do not treat relationship as a DB column
+				continue
+			}
+
+			// ✅ Normal field -> create column
+			name := getTagValue(gtag, "column")
 			if name == "" {
 				name = toSnakeCase(f.Name)
 			}
+
 			*order = append(*order, name)
+
 			base, full := columnDef(f)
 			cols[name] = base
 			defs[name] = full
-
-			// Foreign key relations
-			if (ft.Kind() == reflect.Struct) && !f.Anonymous {
-				fkField := getTagValue(f.Tag.Get("gorm"), "foreignKey")
-				if fkField != "" {
-					refTbl := gormTableName(ft)
-					refCol := getTagValue(f.Tag.Get("gorm"), "references")
-					if refCol == "" {
-						refCol = "id"
-					} else {
-						refCol = toSnakeCase(refCol)
-					}
-
-					fkFields := strings.Split(fkField, ",")
-					for _, fk := range fkFields {
-						fk = strings.TrimSpace(fk)
-						fkCol := toSnakeCase(fk)
-						if fld, ok := t.FieldByName(fk); ok {
-							colName := getTagValue(fld.Tag.Get("gorm"), "column")
-							if colName != "" {
-								fkCol = colName
-							}
-						}
-						fkMap[tbl] = append(fkMap[tbl], foreignKeyInfo{Column: fkCol, RefTable: refTbl, RefColumn: refCol})
-					}
-				}
-			}
 		}
 	}
 
@@ -621,13 +753,16 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		if t.Kind() != reflect.Struct {
 			continue
 		}
+
 		table := gormTableName(t)
 		cols := make(tableInfo)
 		defs := make(tableInfo)
 		var order []string
+
 		hasGormModel = false
 		collectFields(t, cols, defs, &order, table)
 
+		// GORM model defaults
 		if hasGormModel {
 			if _, ok := cols["id"]; !ok {
 				cols["id"] = sqlTypeOf(reflect.TypeOf(uint(0)))
@@ -659,33 +794,59 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 
 func createTableSQL(table string, cols tableInfo, order []string, fks []foreignKeyInfo) string {
 	var defs []string
+
+	// Quote identifiers based on DB engine
+	quote := func(ident string) string {
+		dbType := strings.ToLower(strings.TrimSpace(os.Getenv("DB_TYPE")))
+		switch dbType {
+		case "sqlserver", "mssql":
+			return "[" + ident + "]"
+		case "mysql":
+			return "`" + ident + "`"
+		default:
+			// postgres, sqlite, etc.
+			return `"` + ident + `"`
+		}
+	}
+
+	// Build column defs
+	addCol := func(col string, typ string) {
+		defs = append(defs, fmt.Sprintf("%s %s", quote(col), typ))
+	}
+
 	if len(order) == 0 {
 		for c, t := range cols {
-			defs = append(defs, fmt.Sprintf("%s %s", c, t))
+			addCol(c, t)
 		}
 	} else {
+		// First respect order slice
+		seen := make(map[string]bool, len(cols))
+
 		for _, c := range order {
 			if t, ok := cols[c]; ok {
-				defs = append(defs, fmt.Sprintf("%s %s", c, t))
+				addCol(c, t)
+				seen[c] = true
 			}
 		}
+		// Then append remaining columns not present in order
 		for c, t := range cols {
-			found := false
-			for _, oc := range order {
-				if c == oc {
-					found = true
-					break
-				}
-			}
-			if !found {
-				defs = append(defs, fmt.Sprintf("%s %s", c, t))
+			if !seen[c] {
+				addCol(c, t)
 			}
 		}
 	}
+
+	// Foreign keys
 	for _, fk := range fks {
-		defs = append(defs, fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", fk.Column, fk.RefTable, fk.RefColumn))
+		defs = append(defs, fmt.Sprintf(
+			"FOREIGN KEY (%s) REFERENCES %s(%s)",
+			quote(fk.Column),
+			quote(fk.RefTable),
+			quote(fk.RefColumn),
+		))
 	}
-	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", table, strings.Join(defs, ",\n  "))
+
+	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", quote(table), strings.Join(defs, ",\n  "))
 }
 
 func fileContent(path string) (string, error) {
@@ -844,7 +1005,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 		return err
 	}
 
-	schema, orderMap, defMap, fkMap, err := buildModelSchema(models)
+	schemaMap, orderMap, defMap, fkMap, err := buildModelSchema(models)
 	if err != nil {
 		return err
 	}
@@ -857,7 +1018,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 			t = t.Elem()
 		}
 		tbl := gormTableName(t)
-		if _, ok := schema[tbl]; ok {
+		if _, ok := schemaMap[tbl]; ok {
 			tablesInOrder = append(tablesInOrder, tbl)
 		}
 	}
@@ -866,7 +1027,7 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 	idx := 0
 
 	for _, table := range tablesInOrder {
-		cols := schema[table]
+		cols := schemaMap[table]
 		existing, err := loadTableState(dir, table)
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) {
