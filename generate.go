@@ -185,25 +185,7 @@ func validateManifest(dir string, manifest *ManifestLock) ([]ManifestIssue, erro
 
 	var issues []ManifestIssue
 
-	// 1) verify tracked entries hashes
-	for name, e := range entries {
-		path := filepath.Join(dir, name)
-
-		hash, err := hashMigrationFile(path)
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				issues = append(issues, ManifestIssue{Type: IssueMissingFile, Migration: name, File: path, Detail: "missing migration file"})
-				continue
-			}
-			return nil, err
-		}
-
-		if !strings.EqualFold(hash, e.SQLSHA256) {
-			issues = append(issues, ManifestIssue{Type: IssueHashMismatch, Migration: name, File: path, Detail: "SQL hash mismatch"})
-		}
-	}
-
-	// 2) scan disk and ensure no untracked/missing pairs exist
+	// 1) scan disk and ensure no untracked/missing pairs exist
 	files, _ := filepath.Glob(filepath.Join(dir, "*.sql"))
 
 	diskNames := map[string]struct{}{}
@@ -212,9 +194,32 @@ func validateManifest(dir string, manifest *ManifestLock) ([]ManifestIssue, erro
 		diskNames[name] = struct{}{}
 	}
 
+	for name := range entries {
+		if _, ok := diskNames[name]; !ok {
+			issues = append(issues, ManifestIssue{Type: IssueMissingPair, Migration: name, Detail: "manifest entry missing migration file"})
+		}
+	}
+
 	for name := range diskNames {
 		if _, ok := entries[name]; !ok {
 			issues = append(issues, ManifestIssue{Type: IssueUntracked, Migration: name, Detail: "migration exists on disk but is not registered in manifest"})
+		}
+	}
+
+	// 2) verify tracked entries hashes
+	for name, e := range entries {
+		if _, ok := diskNames[name]; !ok {
+			continue
+		}
+		path := filepath.Join(dir, name)
+
+		hash, err := hashMigrationFile(path)
+		if err != nil {
+			return nil, err
+		}
+
+		if !strings.EqualFold(hash, e.SQLSHA256) {
+			issues = append(issues, ManifestIssue{Type: IssueHashMismatch, Migration: name, File: path, Detail: "SQL hash mismatch"})
 		}
 	}
 
