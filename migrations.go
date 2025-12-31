@@ -39,6 +39,51 @@ func ensureMigrationsTable(db *gorm.DB) error {
 	return db.AutoMigrate(&SchemaMigration{})
 }
 
+func ensureManifestIntegrity(dir string) error {
+	manifestPath := filepath.Join(dir, "manifest.lock.json")
+	manifest, err := loadManifest(manifestPath)
+	if err != nil {
+		return err
+	}
+	migrated, err := migrateManifest(dir, manifest)
+	if err != nil {
+		return err
+	}
+	if migrated {
+		return fmt.Errorf("manifest.lock.json needs migration; run driftflow generate to update it")
+	}
+
+	issues, err := validateManifest(dir, manifest)
+	if err != nil {
+		return err
+	}
+	if len(issues) == 0 {
+		return nil
+	}
+
+	var sb strings.Builder
+	sb.WriteString("manifest validation failed:\n")
+	for _, issue := range issues {
+		sb.WriteString(" - ")
+		sb.WriteString(string(issue.Type))
+		if issue.Migration != "" {
+			sb.WriteString(": ")
+			sb.WriteString(issue.Migration)
+		}
+		if issue.File != "" {
+			sb.WriteString(" (")
+			sb.WriteString(issue.File)
+			sb.WriteString(")")
+		}
+		if issue.Detail != "" {
+			sb.WriteString(" - ")
+			sb.WriteString(issue.Detail)
+		}
+		sb.WriteString("\n")
+	}
+	return fmt.Errorf(strings.TrimSpace(sb.String()))
+}
+
 // readMigrationFiles returns the migration files sorted by name.
 func readMigrationFiles(dir string) ([]string, error) {
 	files, err := filepath.Glob(filepath.Join(dir, "*.sql"))
@@ -254,6 +299,9 @@ func Up(db *gorm.DB, dir string) error {
 	if err := config.ValidateDir(dir); err != nil {
 		return err
 	}
+	if err := ensureManifestIntegrity(dir); err != nil {
+		return err
+	}
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
@@ -336,6 +384,9 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 	if err := config.ValidateDir(dir); err != nil {
 		return err
 	}
+	if err := ensureManifestIntegrity(dir); err != nil {
+		return err
+	}
 	if err := ensureMigrationsTable(db); err != nil {
 		return err
 	}
@@ -375,9 +426,12 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 		if !ok {
 			return fmt.Errorf("missing down file for %s", version)
 		}
-		_, downSQL, _, err := readMigrationFile(file)
+		_, downSQL, checksum, err := readMigrationFile(file)
 		if err != nil {
 			return err
+		}
+		if appliedSet[version].Checksum != checksum {
+			return fmt.Errorf("migration modified after applied: %s", version)
 		}
 		if err := db.Exec(downSQL).Error; err != nil {
 			return fmt.Errorf("revert %s: %w", file, err)
@@ -393,6 +447,9 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 // MigrateTo applies or rolls back migrations until the target version is reached.
 func MigrateTo(db *gorm.DB, dir string, targetVersion string) error {
 	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
+	if err := ensureManifestIntegrity(dir); err != nil {
 		return err
 	}
 	if err := ensureMigrationsTable(db); err != nil {
@@ -493,9 +550,16 @@ func MigrateTo(db *gorm.DB, dir string, targetVersion string) error {
 	for i := currentIndex; i > targetIndex; i-- {
 		version := versions[i]
 		file := versionToFile[version]
-		_, downSQL, _, err := readMigrationFile(file)
+		_, downSQL, checksum, err := readMigrationFile(file)
 		if err != nil {
 			return err
+		}
+		applied, ok := appliedSet[version]
+		if !ok {
+			return fmt.Errorf("applied migration missing from db: %s", version)
+		}
+		if applied.Checksum != checksum {
+			return fmt.Errorf("migration modified after applied: %s", version)
 		}
 		if err := db.Exec(downSQL).Error; err != nil {
 			return fmt.Errorf("revert %s: %w", file, err)
