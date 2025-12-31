@@ -175,7 +175,7 @@ func newSeedgenCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return driftflow.GenerateSeedTemplates(models, seedGenDir)
+			return driftflow.GenerateSeedAssets(models, seedGenDir)
 		},
 	}
 	return cmd

@@ -1,8 +1,10 @@
 package driftflow
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"go/format"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -51,10 +53,31 @@ func GenerateSeedTemplates(models []interface{}, dir string) error {
 	return GenerateSeedTemplatesWithData(models, dir, nil)
 }
 
+// GenerateSeedAssets writes JSON seed templates and Go seeder scaffolding for
+// the provided models into internal/database/{data,seed} (or a custom dir).
+func GenerateSeedAssets(models []interface{}, dir string) error {
+	resolvedDir, err := resolveSeedGenDir(dir)
+	if err != nil {
+		return err
+	}
+	if err := generateSeedTemplates(models, resolvedDir, nil); err != nil {
+		return err
+	}
+	return generateSeedScaffold(models, resolvedDir)
+}
+
 // GenerateSeedTemplatesWithData is like GenerateSeedTemplates but allows providing
 // custom generator functions for field values. The map key should match the JSON
 // field name. If no generator is found for a field, a zero value is used.
 func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[string]func() interface{}) error {
+	resolvedDir, err := resolveSeedGenDir(dir)
+	if err != nil {
+		return err
+	}
+	return generateSeedTemplates(models, resolvedDir, gens)
+}
+
+func resolveSeedGenDir(dir string) (string, error) {
 	if strings.TrimSpace(dir) == "" {
 		cfg := config.Load()
 		dir = cfg.SeedGenDir
@@ -63,11 +86,13 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 			fmt.Println("No se definió 'SEED_GEN_DIR', se usará ruta por defecto:", dir)
 		}
 	}
-
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return "", err
 	}
+	return dir, nil
+}
 
+func generateSeedTemplates(models []interface{}, dir string, gens map[string]func() interface{}) error {
 	modelInfos := buildSeedModelInfo(models)
 	infoByType := make(map[reflect.Type]seedModelInfo, len(modelInfos))
 	primaryIDs := make(map[reflect.Type][]string)
@@ -147,6 +172,94 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		}
 	}
 	return nil
+}
+
+func generateSeedScaffold(models []interface{}, dataDir string) error {
+	seedDir := filepath.Join(filepath.Dir(dataDir), "seed")
+	if err := os.MkdirAll(seedDir, 0o755); err != nil {
+		return err
+	}
+
+	seeders := make([]string, 0, len(models))
+	written := map[string]struct{}{}
+
+	for _, m := range models {
+		t := reflect.TypeOf(m)
+		if t == nil {
+			continue
+		}
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() != reflect.Struct {
+			continue
+		}
+		pkgPath := t.PkgPath()
+		if pkgPath == "" {
+			continue
+		}
+
+		seederName := t.Name() + "Seeder"
+		seeders = append(seeders, seederName)
+
+		fileName := strings.ToLower(t.Name()) + "_seeder.go"
+		if _, ok := written[fileName]; ok {
+			continue
+		}
+		written[fileName] = struct{}{}
+
+		source := buildSeederSource(pkgPath, t.Name(), seederName)
+		formatted, err := format.Source(source)
+		if err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(filepath.Join(seedDir, fileName), formatted, 0o644); err != nil {
+			return err
+		}
+	}
+
+	registerSource := buildRegisterSource(seeders)
+	formatted, err := format.Source(registerSource)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(seedDir, "register.go"), formatted, 0o644)
+}
+
+func buildSeederSource(pkgPath, modelName, seederName string) []byte {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "package seed\n\n")
+	fmt.Fprintf(&buf, "import (\n")
+	fmt.Fprintf(&buf, "\t\"encoding/json\"\n")
+	fmt.Fprintf(&buf, "\t\"os\"\n\n")
+	fmt.Fprintf(&buf, "\tmodels \"%s\"\n", pkgPath)
+	fmt.Fprintf(&buf, "\t\"gorm.io/gorm\"\n")
+	fmt.Fprintf(&buf, ")\n\n")
+	fmt.Fprintf(&buf, "type %s struct{}\n\n", seederName)
+	fmt.Fprintf(&buf, "func (s %s) Seed(db *gorm.DB, filePath string) error {\n", seederName)
+	fmt.Fprintf(&buf, "\tdata, err := os.ReadFile(filePath)\n")
+	fmt.Fprintf(&buf, "\tif err != nil {\n\t\treturn err\n\t}\n\n")
+	fmt.Fprintf(&buf, "\tvar rows []models.%s\n", modelName)
+	fmt.Fprintf(&buf, "\tif err := json.Unmarshal(data, &rows); err != nil {\n\t\treturn err\n\t}\n")
+	fmt.Fprintf(&buf, "\tif len(rows) == 0 {\n\t\treturn nil\n\t}\n\n")
+	fmt.Fprintf(&buf, "\treturn db.Create(&rows).Error\n")
+	fmt.Fprintf(&buf, "}\n")
+	return buf.Bytes()
+}
+
+func buildRegisterSource(seeders []string) []byte {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "package seed\n\n")
+	fmt.Fprintf(&buf, "import driftflow \"github.com/misaelcrespo30/DriftFlow\"\n\n")
+	fmt.Fprintf(&buf, "func RegisterSeeders() []driftflow.Seeder {\n")
+	fmt.Fprintf(&buf, "\treturn []driftflow.Seeder{\n")
+	for _, seeder := range seeders {
+		fmt.Fprintf(&buf, "\t\t%s{},\n", seeder)
+	}
+	fmt.Fprintf(&buf, "\t}\n")
+	fmt.Fprintf(&buf, "}\n")
+	return buf.Bytes()
 }
 
 func buildSeedModelInfo(models []interface{}) []seedModelInfo {
