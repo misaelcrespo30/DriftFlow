@@ -39,25 +39,19 @@ func ensureMigrationsTable(db *gorm.DB) error {
 	return db.AutoMigrate(&SchemaMigration{})
 }
 
-// readMigrationFiles returns the up and down migration files sorted by name.
-func readMigrationFiles(dir string) (ups, downs []string, err error) {
-	ups, err = filepath.Glob(filepath.Join(dir, "*.up.sql"))
+// readMigrationFiles returns the migration files sorted by name.
+func readMigrationFiles(dir string) ([]string, error) {
+	files, err := filepath.Glob(filepath.Join(dir, "*.sql"))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	downs, err = filepath.Glob(filepath.Join(dir, "*.down.sql"))
-	if err != nil {
-		return nil, nil, err
-	}
-	sort.Strings(ups)
-	sort.Strings(downs)
-	return ups, downs, nil
+	sort.Strings(files)
+	return files, nil
 }
 
 func migrationVersion(path string) string {
 	base := filepath.Base(path)
-	base = strings.TrimSuffix(base, ".up.sql")
-	base = strings.TrimSuffix(base, ".down.sql")
+	base = strings.TrimSuffix(base, ".sql")
 	return base
 }
 
@@ -226,7 +220,7 @@ func modelsSchema(db *gorm.DB, models []interface{}) (schemaInfo, error) {
 	}
 	_ = EnsureAuditTable(db)
 	_ = EnsureFieldHistoryTable(db)
-	ups, _, err := readMigrationFiles(dir)
+	ups, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
 	}
@@ -280,6 +274,10 @@ func Up(db *gorm.DB, dir string) error {
 		if err != nil {
 			return err
 		}
+		upSQL, _, err := splitMigrationSections(string(sqlBytes))
+		if err != nil {
+			return err
+		}
 		checksum := sha256Hex(sqlBytes)
 
 		// ya aplicada?
@@ -298,7 +296,7 @@ func Up(db *gorm.DB, dir string) error {
 
 		// ✅ aplicar en transacción
 		if err := db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Exec(string(sqlBytes)).Error; err != nil {
+			if err := tx.Exec(upSQL).Error; err != nil {
 				return fmt.Errorf("apply %s: %w", f, err)
 			}
 			rec := SchemaMigration{
@@ -320,8 +318,8 @@ func Up(db *gorm.DB, dir string) error {
 }
 
 func migrationVersionFromFilename(path string) string {
-	base := filepath.Base(path)                // 2025_..._create_X_table.up.sql
-	return strings.TrimSuffix(base, ".up.sql") // 2025_..._create_X_table
+	base := filepath.Base(path)             // 2025_..._create_X_table.sql
+	return strings.TrimSuffix(base, ".sql") // 2025_..._create_X_table
 }
 
 func sha256Hex(b []byte) string {
@@ -339,7 +337,7 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 	}
 	_ = EnsureAuditTable(db)
 	_ = EnsureFieldHistoryTable(db)
-	_, downs, err := readMigrationFiles(dir)
+	downs, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
 	}
@@ -359,11 +357,11 @@ func Down(db *gorm.DB, dir string, targetVersion string) error {
 		if !ok {
 			return fmt.Errorf("missing down file for %s", m.Version)
 		}
-		sqlBytes, err := os.ReadFile(file)
+		_, downSQL, err := readMigrationSections(file)
 		if err != nil {
 			return err
 		}
-		if err := db.Exec(string(sqlBytes)).Error; err != nil {
+		if err := db.Exec(downSQL).Error; err != nil {
 			return fmt.Errorf("revert %s: %w", file, err)
 		}
 		if err := removeMigration(db, m.Version); err != nil {
@@ -386,7 +384,7 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 	}
 	_ = EnsureAuditTable(db)
 	_ = EnsureFieldHistoryTable(db)
-	_, downs, err := readMigrationFiles(dir)
+	downs, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
 	}
@@ -407,11 +405,11 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 		if !ok {
 			return fmt.Errorf("missing down file for %s", m.Version)
 		}
-		sqlBytes, err := os.ReadFile(file)
+		_, downSQL, err := readMigrationSections(file)
 		if err != nil {
 			return err
 		}
-		if err := db.Exec(string(sqlBytes)).Error; err != nil {
+		if err := db.Exec(downSQL).Error; err != nil {
 			return fmt.Errorf("revert %s: %w", file, err)
 		}
 		if err := removeMigration(db, m.Version); err != nil {
@@ -568,13 +566,7 @@ func GenerateMigrations(db *gorm.DB, models []interface{}, dir string) error {
 			continue
 		}
 
-		upPath := filepath.Join(dir, name+".up.sql")
-		downPath := filepath.Join(dir, name+".down.sql")
-
-		if err := os.WriteFile(upPath, []byte(upSQL+"\n"), 0o644); err != nil {
-			return err
-		}
-		if err := os.WriteFile(downPath, []byte(downSQL+"\n"), 0o644); err != nil {
+		if err := writeMigrationFile(dir, name, upSQL, downSQL); err != nil {
 			return err
 		}
 
@@ -929,11 +921,11 @@ func createTableSQL(table string, cols tableInfo, order []string, fks []foreignK
 }
 
 func fileContent(path string) (string, error) {
-	b, err := os.ReadFile(path)
+	upSQL, _, err := readMigrationSections(path)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(b)), nil
+	return strings.TrimSpace(upSQL), nil
 }
 
 func parseCreateColumns(sql string) tableInfo {
@@ -1018,9 +1010,9 @@ func parseRemoveColumns(sql string) []string {
 }
 
 func loadTableState(dir, table string) (tableInfo, error) {
-	createPattern := filepath.Join(dir, fmt.Sprintf("*_create_%s_table.up.sql", table))
-	addPattern := filepath.Join(dir, fmt.Sprintf("*_add_fields_to_%s_table.up.sql", table))
-	removePattern := filepath.Join(dir, fmt.Sprintf("*_remove_fields_from_%s_table.up.sql", table))
+	createPattern := filepath.Join(dir, fmt.Sprintf("*_create_%s_table.sql", table))
+	addPattern := filepath.Join(dir, fmt.Sprintf("*_add_fields_to_%s_table.sql", table))
+	removePattern := filepath.Join(dir, fmt.Sprintf("*_remove_fields_from_%s_table.sql", table))
 
 	files, err := filepath.Glob(createPattern)
 	if err != nil {
@@ -1070,95 +1062,3 @@ func duplicateContent(dir, pattern, sql string) bool {
 	}
 	return false
 }
-
-// GenerateModelMigrations compares models with existing migration files and
-// writes new migration files for any differences found.
-/*func GenerateModelMigrations(models []interface{}, dir string) error {
-	if dir == "" {
-		dir = os.Getenv("MIG_DIR")
-		if dir == "" {
-			dir = "migrations"
-		}
-	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-
-	schemaMap, orderMap, defMap, fkMap, err := buildModelSchema(models)
-	if err != nil {
-		return err
-	}
-
-	// Preserve the order of the provided models when generating files
-	var tablesInOrder []string
-	for _, m := range models {
-		t := reflect.TypeOf(m)
-		if t.Kind() == reflect.Pointer {
-			t = t.Elem()
-		}
-		tbl := gormTableName(t)
-		if _, ok := schemaMap[tbl]; ok {
-			tablesInOrder = append(tablesInOrder, tbl)
-		}
-	}
-
-	now := time.Now().UTC()
-	idx := 0
-
-	for _, table := range tablesInOrder {
-		cols := schemaMap[table]
-		existing, err := loadTableState(dir, table)
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
-				idx++
-				sql := createTableSQL(table, defMap[table], orderMap[table], fkMap[table])
-				name := fmt.Sprintf("%s_create_%s_table.up.sql", ts, table)
-				if !duplicateContent(dir, fmt.Sprintf("*_create_%s_table.up.sql", table), sql) {
-					if err := os.WriteFile(filepath.Join(dir, name), []byte(sql+"\n"), 0o644); err != nil {
-						return err
-					}
-				}
-				continue
-			}
-			return err
-		}
-
-		added, removed := diffColumns(existing, cols)
-		if len(added) > 0 {
-			ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
-			idx++
-			var stmts []string
-			for _, c := range orderMap[table] {
-				if _, ok := added[c]; ok {
-					stmts = append(stmts, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s;", table, c, defMap[table][c]))
-				}
-			}
-			sql := strings.Join(stmts, "\n")
-			pattern := fmt.Sprintf("*_add_fields_to_%s_table.up.sql", table)
-			if !duplicateContent(dir, pattern, sql) {
-				name := fmt.Sprintf("%s_add_fields_to_%s_table.up.sql", ts, table)
-				if err := os.WriteFile(filepath.Join(dir, name), []byte(sql+"\n"), 0o644); err != nil {
-					return err
-				}
-			}
-		}
-		if len(removed) > 0 {
-			ts := now.Add(time.Duration(idx) * time.Second).Format("2006_01_02_150405")
-			idx++
-			var stmts []string
-			for c := range removed {
-				stmts = append(stmts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", table, c))
-			}
-			sql := strings.Join(stmts, "\n")
-			pattern := fmt.Sprintf("*_remove_fields_from_%s_table.up.sql", table)
-			if !duplicateContent(dir, pattern, sql) {
-				name := fmt.Sprintf("%s_remove_fields_from_%s_table.up.sql", ts, table)
-				if err := os.WriteFile(filepath.Join(dir, name), []byte(sql+"\n"), 0o644); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}*/
