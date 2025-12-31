@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"fmt"
 	"github.com/misaelcrespo30/DriftFlow/helpers"
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/models"
 
@@ -26,6 +27,9 @@ func (s TenantUserSeeder) Seed(db *gorm.DB, filePath string) error {
 
 		ObjUser := helpers.GetRandomRecord(db, &models.User{})
 		ObjTenant := helpers.GetRandomRecord(db, &models.Tenant{})
+		if ObjUser == nil || ObjTenant == nil {
+			return fmt.Errorf("no hay usuarios o tenants disponibles para crear tenant_users")
+		}
 
 		tenantUser := models.TenantUser{
 			UserID:             ObjUser.UserID,

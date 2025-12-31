@@ -16,7 +16,7 @@ var defaultEnv = map[string]string{
 	"DB_SSLMODE":   "disable",
 	"MIG_DIR":      "internal/database/migrations",
 	"SEED_GEN_DIR": "internal/database/data",
-	"SEED_RUN_DIR": "internal/database/seed",
+	"SEED_RUN_DIR": "internal/database/data",
 	"MODELS_DIR":   "internal/models",
 	"PROJECT_PATH": "",
 }
