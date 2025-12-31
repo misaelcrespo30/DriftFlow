@@ -76,6 +76,7 @@ Flags globales útiles:
 - `--seed-gen-dir`: ruta para generar/leer seeds.
 - `--models`: ruta de modelos Go.
 
+
 Para `compare`:
 
 ```bash
