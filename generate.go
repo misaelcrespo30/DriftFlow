@@ -51,9 +51,8 @@ type ManifestLock struct {
 }
 
 type ManifestEntry struct {
-	Name       string `json:"name"` // base name, sin .sql
-	UpSHA256   string `json:"up_sha256"`
-	DownSHA256 string `json:"down_sha256"`
+	Name       string `json:"name"` // filename, incluye .sql
+	SQLSHA256  string `json:"sql_sha256"`
 	CreatedUTC string `json:"created_utc"`
 }
 
@@ -61,9 +60,23 @@ type ManifestIssueType string
 
 type ManifestIssue struct {
 	Type      ManifestIssueType
-	Migration string // base name
+	Migration string // filename
 	File      string // path si aplica
 	Detail    string
+}
+
+type manifestLockWire struct {
+	Version    int                 `json:"version"`
+	Migrations []manifestEntryWire `json:"migrations"`
+	UpdatedUTC string              `json:"updated_utc,omitempty"`
+}
+
+type manifestEntryWire struct {
+	Name       string `json:"name"`
+	SQLSHA256  string `json:"sql_sha256"`
+	UpSHA256   string `json:"up_sha256"`
+	DownSHA256 string `json:"down_sha256"`
+	CreatedUTC string `json:"created_utc"`
 }
 
 func loadManifest(path string) (*ManifestLock, error) {
@@ -74,9 +87,22 @@ func loadManifest(path string) (*ManifestLock, error) {
 		}
 		return nil, err
 	}
-	var m ManifestLock
-	if err := json.Unmarshal(b, &m); err != nil {
+	var wire manifestLockWire
+	if err := json.Unmarshal(b, &wire); err != nil {
 		return nil, fmt.Errorf("manifest.lock.json invalid: %w", err)
+	}
+	m := ManifestLock{
+		Version:    wire.Version,
+		UpdatedUTC: wire.UpdatedUTC,
+		Migrations: make([]ManifestEntry, 0, len(wire.Migrations)),
+	}
+	for _, entry := range wire.Migrations {
+		name := normalizeManifestName(entry.Name)
+		m.Migrations = append(m.Migrations, ManifestEntry{
+			Name:       name,
+			SQLSHA256:  entry.SQLSHA256,
+			CreatedUTC: entry.CreatedUTC,
+		})
 	}
 	if m.Migrations == nil {
 		m.Migrations = []ManifestEntry{}
@@ -97,11 +123,59 @@ func saveManifest(path string, manifest *ManifestLock) error {
 	return os.Rename(tmp, path)
 }
 
+func normalizeManifestName(name string) string {
+	if name == "" {
+		return ""
+	}
+	if strings.HasSuffix(name, ".sql") {
+		return name
+	}
+	return name + ".sql"
+}
+
+func hashMigrationFile(path string) (string, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return sha256Hex(b), nil
+}
+
+func migrateManifest(dir string, manifest *ManifestLock) (bool, error) {
+	changed := false
+	for i := range manifest.Migrations {
+		entry := &manifest.Migrations[i]
+		normalized := normalizeManifestName(entry.Name)
+		if normalized != entry.Name {
+			entry.Name = normalized
+			changed = true
+		}
+		if entry.SQLSHA256 == "" && entry.Name != "" {
+			hash, err := hashMigrationFile(filepath.Join(dir, entry.Name))
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+				return false, err
+			}
+			entry.SQLSHA256 = hash
+			changed = true
+		}
+	}
+	if changed {
+		manifest.Version++
+	}
+	return changed, nil
+}
+
 func validateManifest(dir string, manifest *ManifestLock) ([]ManifestIssue, error) {
 	entries := make(map[string]ManifestEntry, len(manifest.Migrations))
 	for _, e := range manifest.Migrations {
 		if e.Name == "" {
 			return nil, fmt.Errorf("manifest has empty migration name")
+		}
+		if !strings.HasSuffix(e.Name, ".sql") {
+			return nil, fmt.Errorf("manifest migration name missing .sql: %s", e.Name)
 		}
 		if _, exists := entries[e.Name]; exists {
 			return nil, fmt.Errorf("manifest has duplicate migration name: %s", e.Name)
@@ -113,9 +187,9 @@ func validateManifest(dir string, manifest *ManifestLock) ([]ManifestIssue, erro
 
 	// 1) verify tracked entries hashes
 	for name, e := range entries {
-		path := filepath.Join(dir, name+".sql")
+		path := filepath.Join(dir, name)
 
-		upSQL, downSQL, err := readMigrationSections(path)
+		hash, err := hashMigrationFile(path)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				issues = append(issues, ManifestIssue{Type: IssueMissingFile, Migration: name, File: path, Detail: "missing migration file"})
@@ -124,28 +198,23 @@ func validateManifest(dir string, manifest *ManifestLock) ([]ManifestIssue, erro
 			return nil, err
 		}
 
-		upHash := sha256Hex([]byte(upSQL))
-		downHash := sha256Hex([]byte(downSQL))
-		if !strings.EqualFold(upHash, e.UpSHA256) {
-			issues = append(issues, ManifestIssue{Type: IssueHashMismatch, Migration: name, File: path, Detail: "UP hash mismatch"})
-		}
-		if !strings.EqualFold(downHash, e.DownSHA256) {
-			issues = append(issues, ManifestIssue{Type: IssueHashMismatch, Migration: name, File: path, Detail: "DOWN hash mismatch"})
+		if !strings.EqualFold(hash, e.SQLSHA256) {
+			issues = append(issues, ManifestIssue{Type: IssueHashMismatch, Migration: name, File: path, Detail: "SQL hash mismatch"})
 		}
 	}
 
 	// 2) scan disk and ensure no untracked/missing pairs exist
 	files, _ := filepath.Glob(filepath.Join(dir, "*.sql"))
 
-	diskBases := map[string]struct{}{}
+	diskNames := map[string]struct{}{}
 	for _, p := range files {
-		base := strings.TrimSuffix(filepath.Base(p), ".sql")
-		diskBases[base] = struct{}{}
+		name := filepath.Base(p)
+		diskNames[name] = struct{}{}
 	}
 
-	for base := range diskBases {
-		if _, ok := entries[base]; !ok {
-			issues = append(issues, ManifestIssue{Type: IssueUntracked, Migration: base, Detail: "migration exists on disk but is not registered in manifest"})
+	for name := range diskNames {
+		if _, ok := entries[name]; !ok {
+			issues = append(issues, ManifestIssue{Type: IssueUntracked, Migration: name, Detail: "migration exists on disk but is not registered in manifest"})
 		}
 	}
 
@@ -159,13 +228,13 @@ func repairManifest(dir string, manifest *ManifestLock, issues []ManifestIssue, 
 		byName[e.Name] = e
 	}
 
-	recalc := func(base string) (string, string, error) {
-		path := filepath.Join(dir, base+".sql")
-		upSQL, downSQL, err := readMigrationSections(path)
+	recalc := func(name string) (string, error) {
+		path := filepath.Join(dir, name)
+		hash, err := hashMigrationFile(path)
 		if err != nil {
-			return "", "", err
+			return "", err
 		}
-		return sha256Hex([]byte(upSQL)), sha256Hex([]byte(downSQL)), nil
+		return hash, nil
 	}
 
 	// fix mismatches
@@ -173,17 +242,16 @@ func repairManifest(dir string, manifest *ManifestLock, issues []ManifestIssue, 
 		if is.Type != IssueHashMismatch {
 			continue
 		}
-		base := is.Migration
-		entry := byName[base]
+		name := is.Migration
+		entry := byName[name]
 		if entry == nil {
 			continue
 		}
-		upHash, downHash, err := recalc(base)
+		hash, err := recalc(name)
 		if err != nil {
 			return err
 		}
-		entry.UpSHA256 = upHash
-		entry.DownSHA256 = downHash
+		entry.SQLSHA256 = hash
 	}
 
 	// add untracked (optional)
@@ -196,21 +264,20 @@ func repairManifest(dir string, manifest *ManifestLock, issues []ManifestIssue, 
 			if is.Type != IssueUntracked {
 				continue
 			}
-			base := is.Migration
-			if seen[base] {
+			name := normalizeManifestName(is.Migration)
+			if seen[name] {
 				continue
 			}
-			upHash, downHash, err := recalc(base)
+			hash, err := recalc(name)
 			if err != nil {
 				return err
 			}
 			manifest.Migrations = append(manifest.Migrations, ManifestEntry{
-				Name:       base,
-				UpSHA256:   upHash,
-				DownSHA256: downHash,
+				Name:       name,
+				SQLSHA256:  hash,
 				CreatedUTC: time.Now().UTC().Format(time.RFC3339),
 			})
-			seen[base] = true
+			seen[name] = true
 		}
 	}
 
@@ -223,16 +290,16 @@ func repairManifest(dir string, manifest *ManifestLock, issues []ManifestIssue, 
 }
 
 func appendMigrationToManifest(dir string, manifest *ManifestLock, baseName, createdUTC string) error {
-	path := filepath.Join(dir, baseName+".sql")
-	upSQL, downSQL, err := readMigrationSections(path)
+	name := normalizeManifestName(baseName)
+	path := filepath.Join(dir, name)
+	hash, err := hashMigrationFile(path)
 	if err != nil {
 		return err
 	}
 
 	manifest.Migrations = append(manifest.Migrations, ManifestEntry{
-		Name:       baseName,
-		UpSHA256:   sha256Hex([]byte(upSQL)),
-		DownSHA256: sha256Hex([]byte(downSQL)),
+		Name:       name,
+		SQLSHA256:  hash,
 		CreatedUTC: createdUTC,
 	})
 
@@ -268,6 +335,15 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 	manifest, err := loadManifest(manifestPath)
 	if err != nil {
 		return err
+	}
+	migrated, err := migrateManifest(dir, manifest)
+	if err != nil {
+		return err
+	}
+	if migrated {
+		if err := saveManifest(manifestPath, manifest); err != nil {
+			return err
+		}
 	}
 
 	issues, err := validateManifest(dir, manifest)
