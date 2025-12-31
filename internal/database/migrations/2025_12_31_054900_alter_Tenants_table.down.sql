@@ -1,1 +1,0 @@
-ALTER TABLE Tenants DROP COLUMN crespo;

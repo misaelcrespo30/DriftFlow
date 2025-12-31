@@ -1,3 +1,4 @@
+-- +migrate Up
 CREATE TABLE "TenantUsers" (
   "id" varchar(36) primary key,
   "user_id" varchar(36) not null,
@@ -10,3 +11,6 @@ CREATE TABLE "TenantUsers" (
   FOREIGN KEY ("user_id") REFERENCES "Users"("user_id"),
   FOREIGN KEY ("tenant_id") REFERENCES "Tenants"("tenant_id")
 );
+
+-- +migrate Down
+DROP TABLE TenantUsers;

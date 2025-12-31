@@ -38,7 +38,7 @@ type Tenant struct {
 	Plan        *Plan        `gorm:"foreignKey:PlanID;references:PlanID" json:"plan,omitempty"`
 	TenantUsers []TenantUser `gorm:"foreignKey:TenantID;references:TenantID" json:"tenant_users,omitempty"`
 
-	Crespo string `gorm:"column:crespo;size:100;uniqueIndex" json:"crespo"`
+	Padron string `gorm:"column:padron;size:100;uniqueIndex" json:"padron"`
 }
 
 // TableName Tenant's table name

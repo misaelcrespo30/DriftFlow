@@ -21,8 +21,7 @@ type User struct {
 	// Relaciones
 	TenantUsers []TenantUser `gorm:"foreignKey:UserID;references:UserID" json:"tenant_users,omitempty"`
 
-	Apellido string `gorm:"column:apellido;size:100;uniqueIndex" json:"apellido"`
-	Misael   string `gorm:"column:misael;size:100;uniqueIndex" json:"misael"`
+	Misael string `gorm:"column:misael;size:100;uniqueIndex" json:"misael"`
 }
 
 // TableName User's table name

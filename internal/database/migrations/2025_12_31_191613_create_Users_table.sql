@@ -1,3 +1,4 @@
+-- +migrate Up
 CREATE TABLE "Users" (
   "user_id" varchar(36) primary key,
   "email" varchar(100) not null unique,
@@ -9,5 +10,10 @@ CREATE TABLE "Users" (
   "lockout_end" timestamp,
   "phone" text,
   "is_phone_confirmed" boolean not null default false,
-  "security_stamp" text
+  "security_stamp" text,
+  "apellido" varchar(100) unique,
+  "misael" varchar(100) unique
 );
+
+-- +migrate Down
+DROP TABLE Users;

@@ -1,48 +1,36 @@
 {
-  "version": 3,
+  "version": 2,
   "migrations": [
     {
-      "name": "2025_12_31_053621_create_Users_table",
-      "up_sha256": "081421dadd67c034a6e2d431a76ab8e8313b6f543df7e2f6ceca74a577ea66f7",
-      "down_sha256": "a581d288c0bad88374ac281df2479529a558aeea9b852c6d7aab5f5d2f078761",
-      "created_utc": "2025-12-31T05:36:21Z"
+      "name": "2025_12_31_191613_create_Users_table.sql",
+      "sql_sha256": "f10cecf1ff7d527b0a9ea4167aa24f7cb55eb47539ce37ebecc385b4deec4086",
+      "created_utc": "2025-12-31T19:16:13Z"
     },
     {
-      "name": "2025_12_31_053622_create_plans_table",
-      "up_sha256": "6f4cfcc60d179c3835390aa8945aa6b919a487b0bf8cf1e4a643d6490239ac76",
-      "down_sha256": "2e9cb7ab19f8cafa9cfd165759b74b60cd889dcc60bbe72783292f002fb8beb5",
-      "created_utc": "2025-12-31T05:36:21Z"
+      "name": "2025_12_31_191614_create_plans_table.sql",
+      "sql_sha256": "326d69c37d1477440d841bba648c2cea7f9ee39836ef1c01d8702460753b9bcb",
+      "created_utc": "2025-12-31T19:16:13Z"
     },
     {
-      "name": "2025_12_31_053623_create_Tenants_table",
-      "up_sha256": "e9f7dc59aa28104399c89698228a2daf3fce6b3f576cc7525b78276ab6b76a82",
-      "down_sha256": "6c404cd5b29fef2ccecda1795693025657c2d07695664729fd7e388e46599fc9",
-      "created_utc": "2025-12-31T05:36:21Z"
+      "name": "2025_12_31_191615_create_Tenants_table.sql",
+      "sql_sha256": "0c7a993250d02d7508b4489f827e33f072e13f4d1e16cfce525f48a05954959b",
+      "created_utc": "2025-12-31T19:16:13Z"
     },
     {
-      "name": "2025_12_31_053624_create_TenantUsers_table",
-      "up_sha256": "71a529b787295203e48d2ec73bd9fe9ecbcddc054b264db6a9dc315b584b7a16",
-      "down_sha256": "b4801796767f9b0c10cc956a841e39520116e0f808c50bb5de115b9dc9d8d097",
-      "created_utc": "2025-12-31T05:36:21Z"
+      "name": "2025_12_31_191616_create_TenantUsers_table.sql",
+      "sql_sha256": "35995b8429ffeb97be0165cec005e9f16a316b35c262c47ef1c4050294e40a00",
+      "created_utc": "2025-12-31T19:16:13Z"
     },
     {
-      "name": "2025_12_31_054455_alter_Users_table",
-      "up_sha256": "e21e70521b9d5fdb5638efb2541fac847d2b6fe29fc9b180c9ae6f8f07863b91",
-      "down_sha256": "4c1b5dccde5d1f58d118a905b38323cceefc19ce6e09fbf9929d97593385eeb3",
-      "created_utc": "2025-12-31T05:44:55Z"
+      "name": "2025_12_31_191733_alter_Users_table.sql",
+      "sql_sha256": "c237019eaaa57b898b0f33b153499d048f1297fc4800c91bd50042461187681b",
+      "created_utc": "2025-12-31T19:17:33Z"
     },
     {
-      "name": "2025_12_31_054859_alter_Users_table",
-      "up_sha256": "26abbd51d3a6076a005b3ce7d6d2324464f1ba35e24b5929f83000b30cffe781",
-      "down_sha256": "b1f369d6c4848d75467227ba9ddd4f8849c9510632a83c480bd30bfbdf497845",
-      "created_utc": "2025-12-31T05:48:59Z"
-    },
-    {
-      "name": "2025_12_31_054900_alter_Tenants_table",
-      "up_sha256": "953d6387582c032e3be512a40521683ff99e2612dd97fa525da476f70bce9d15",
-      "down_sha256": "5ca42bbad00fb85aa43842edd24040fcd174285c64331a18f3b22eeda75019d0",
-      "created_utc": "2025-12-31T05:48:59Z"
+      "name": "2025_12_31_191734_alter_Tenants_table.sql",
+      "sql_sha256": "c41876d6f08e1cdc7a7fecabb50c45feafdaa9a87faf646bcf2953e47175828a",
+      "created_utc": "2025-12-31T19:17:33Z"
     }
   ],
-  "updated_utc": "2025-12-31T05:48:59Z"
+  "updated_utc": "2025-12-31T19:17:33Z"
 }

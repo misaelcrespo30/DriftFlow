@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 2,
   "tables": {
     "TenantUsers": {
       "columns": {
@@ -38,12 +38,12 @@
     "Tenants": {
       "columns": {
         "connection_string": "text not null",
-        "crespo": "varchar(100) unique",
         "firm_name": "varchar(200)",
         "is_available": "boolean not null default false",
         "is_data_seeded": "boolean not null default false",
         "last_updated": "timestamp not null",
         "misael": "varchar(50) not null default 'standard'",
+        "padron": "varchar(100) unique",
         "plan_id": "text",
         "quantity_of_employees": "bigint not null default 0",
         "recovery_state": "varchar(50) not null",
@@ -76,7 +76,7 @@
         "subscription_id",
         "subscription_item_id",
         "misael",
-        "crespo"
+        "padron"
       ],
       "foreign_keys": [
         {
@@ -89,7 +89,6 @@
     "Users": {
       "columns": {
         "access_failed_count": "bigint not null default 0",
-        "apellido": "varchar(100) unique",
         "email": "varchar(100) not null unique",
         "is_email_confirmed": "boolean not null default false",
         "is_lockout_enabled": "boolean not null default false",
@@ -114,7 +113,6 @@
         "phone",
         "is_phone_confirmed",
         "security_stamp",
-        "apellido",
         "misael"
       ],
       "foreign_keys": []
