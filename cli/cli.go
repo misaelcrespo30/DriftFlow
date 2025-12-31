@@ -160,11 +160,7 @@ func newSeedCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			if err != nil {
-				return err
-			}
-			return driftflow.Seed(db, seedGenDir)
+			return driftflow.Seed(db, seedRunDir)
 
 		},
 	}
