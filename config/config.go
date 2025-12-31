@@ -37,7 +37,7 @@ func Load() *Config {
 		Driver:     driver,
 		MigDir:     migPath,
 		SeedGenDir: getEnvOrDefault("SEED_GEN_DIR", "internal/database/data"),
-		SeedRunDir: getEnvOrDefault("SEED_RUN_DIR", "internal/database/seed"),
+		SeedRunDir: getEnvOrDefault("SEED_RUN_DIR", "internal/database/data"),
 		ModelsDir:  getEnvOrDefault("MODELS_DIR", "internal/models"),
 	}
 
