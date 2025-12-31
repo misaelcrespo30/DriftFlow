@@ -3,6 +3,27 @@
   <component name="GoORMHelperCache">
     <option name="schemaMapping">
       <map>
+        <entry key="AuthHandler">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/handler/auth_handler.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="AuthService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/services/auth_service.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ColAlter">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/diff_snapshot.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="Config">
           <value>
             <set>
@@ -17,10 +38,46 @@
             </set>
           </value>
         </entry>
+        <entry key="GenerateOptions">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/generate.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ManifestEntry">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/generate.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ManifestIssue">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/generate.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ManifestLock">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/generate.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="Plan">
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/plan.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="PlanSeeder">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/seed/plan_seeder.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/plan_seeder.go" />
             </set>
           </value>
         </entry>
@@ -38,10 +95,33 @@
             </set>
           </value>
         </entry>
+        <entry key="SchemaSnapshot">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/generate.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="SnapshotTable">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/generate.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="Tenant">
           <value>
             <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/models/tenant.go" />
               <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TenantSeeder">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/seed/tenant_seeder.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/tenant_seeder.go" />
             </set>
           </value>
         </entry>
@@ -49,6 +129,30 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant_user.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TenantUserSeeder">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/seed/tenant_user_seeder.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/tenant_user_seeder.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="User">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/models/user.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/user.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="UserSeeder">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/seed/user_seeder.go" />
+              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/user_seeder.go" />
             </set>
           </value>
         </entry>
@@ -91,6 +195,13 @@
     </option>
     <option name="scannedPathMapping">
       <map>
+        <entry key="file://$PROJECT_DIR$/alter_sql.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767084529067" />
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/audit.go">
           <value>
             <ScannedPath>
@@ -106,14 +217,28 @@
         <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1752628009183" />
+              <option name="lastModified" value="1767155499417" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/cmd/driftflow-demo/main.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767157389769" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/cmd/driftflow.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1752616192056" />
+              <option name="lastModified" value="1767157511241" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/cmd/driftflow/main.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767157365968" />
             </ScannedPath>
           </value>
         </entry>
@@ -164,6 +289,18 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/diff_snapshot.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767084256744" />
+              <option name="schema">
+                <list>
+                  <option value="ColAlter" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/field_history.go">
           <value>
             <ScannedPath>
@@ -171,6 +308,23 @@
               <option name="schema">
                 <list>
                   <option value="FieldHistory" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/generate.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767198516987" />
+              <option name="schema">
+                <list>
+                  <option value="SchemaSnapshot" />
+                  <option value="SnapshotTable" />
+                  <option value="GenerateOptions" />
+                  <option value="ManifestLock" />
+                  <option value="ManifestEntry" />
+                  <option value="ManifestIssue" />
                 </list>
               </option>
             </ScannedPath>
@@ -186,7 +340,7 @@
         <entry key="file://$PROJECT_DIR$/helpers/helpers.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1750810675942" />
+              <option name="lastModified" value="1767159215784" />
             </ScannedPath>
           </value>
         </entry>
@@ -197,10 +351,89 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/tenant.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767160125677" />
+              <option name="schema">
+                <list>
+                  <option value="Tenant" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/user.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767160082598" />
+              <option name="schema">
+                <list>
+                  <option value="User" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/seed/plan_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767158931889" />
+              <option name="schema">
+                <list>
+                  <option value="PlanSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/seed/tenant_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767159284824" />
+              <option name="schema">
+                <list>
+                  <option value="TenantSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/seed/tenant_user_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767159297844" />
+              <option name="schema">
+                <list>
+                  <option value="TenantUserSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/seed/user_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767159297837" />
+              <option name="schema">
+                <list>
+                  <option value="UserSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/models/models.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767131811266" />
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767037793512" />
+              <option name="lastModified" value="1767109831634" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
@@ -227,7 +460,7 @@
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1752611669470" />
+              <option name="lastModified" value="1767155010041" />
             </ScannedPath>
           </value>
         </entry>
@@ -271,10 +504,84 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/libs/helpers/security_stamp.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767074738199" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/cmd/main.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767075312927" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/plan_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767075848340" />
+              <option name="schema">
+                <list>
+                  <option value="PlanSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/tenant_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767075724027" />
+              <option name="schema">
+                <list>
+                  <option value="TenantSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/tenant_user_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767075967265" />
+              <option name="schema">
+                <list>
+                  <option value="TenantUserSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/database/seed/user_seeder.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767076281742" />
+              <option name="schema">
+                <list>
+                  <option value="UserSeeder" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/handler/auth_handler.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767075100798" />
+              <option name="schema">
+                <list>
+                  <option value="AuthHandler" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/plan.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767030530963" />
+              <option name="lastModified" value="1767044529285" />
               <option name="schema">
                 <list>
                   <option value="Plan" />
@@ -286,7 +593,7 @@
         <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767030428004" />
+              <option name="lastModified" value="1767080943913" />
               <option name="schema">
                 <list>
                   <option value="Tenant" />
@@ -298,10 +605,34 @@
         <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/tenant_user.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767029559105" />
+              <option name="lastModified" value="1767044765009" />
               <option name="schema">
                 <list>
                   <option value="TenantUser" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/user.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767044799773" />
+              <option name="schema">
+                <list>
+                  <option value="User" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/services/auth_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1767074738210" />
+              <option name="schema">
+                <list>
+                  <option value="AuthService" />
                 </list>
               </option>
             </ScannedPath>
@@ -312,17 +643,31 @@
     <option name="tableStructMapping">
       <map>
         <entry key="alter" value="alter" />
+        <entry key="auth_handler" value="AuthHandler" />
+        <entry key="auth_service" value="AuthService" />
         <entry key="change" value="change" />
+        <entry key="col_alter" value="ColAlter" />
         <entry key="config" value="Config" />
         <entry key="field_history" value="FieldHistory" />
         <entry key="foreign_key_info" value="foreignKeyInfo" />
+        <entry key="generate_options" value="GenerateOptions" />
+        <entry key="manifest_entry" value="ManifestEntry" />
+        <entry key="manifest_issue" value="ManifestIssue" />
+        <entry key="manifest_lock" value="ManifestLock" />
         <entry key="ordered_map" value="orderedMap" />
         <entry key="plan" value="Plan" />
+        <entry key="plan_seeder" value="PlanSeeder" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
+        <entry key="schema_snapshot" value="SchemaSnapshot" />
+        <entry key="snapshot_table" value="SnapshotTable" />
         <entry key="tenant" value="Tenant" />
+        <entry key="tenant_seeder" value="TenantSeeder" />
         <entry key="tenant_user" value="TenantUser" />
+        <entry key="tenant_user_seeder" value="TenantUserSeeder" />
         <entry key="tmpl_model" value="tmplModel" />
+        <entry key="user" value="User" />
+        <entry key="user_seeder" value="UserSeeder" />
       </map>
     </option>
     <option name="lastTimeChecked" value="1767025088260" />

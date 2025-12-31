@@ -43,8 +43,10 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", cfg.DSN, "database DSN")
 	rootCmd.PersistentFlags().StringVar(&driver, "driver", cfg.Driver, "database driver")
 	rootCmd.PersistentFlags().StringVar(&migDir, "migrations", cfg.MigDir, "migrations directory")
-	rootCmd.PersistentFlags().StringVar(&seedGenDir, "seeds", cfg.SeedGenDir, "seed data directory")
-	rootCmd.PersistentFlags().StringVar(&seedRunDir, "seeds", cfg.SeedRunDir, "seed data directory")
+	//rootCmd.PersistentFlags().StringVar(&seedGenDir, "seeds", cfg.SeedGenDir, "seed data directory")
+	//rootCmd.PersistentFlags().StringVar(&seedRunDir, "seeds", cfg.SeedRunDir, "seed data directory")
+	rootCmd.PersistentFlags().StringVar(&seedRunDir, "seeds", cfg.SeedRunDir, "seed run directory")
+	rootCmd.PersistentFlags().StringVar(&seedGenDir, "seed-gen-dir", cfg.SeedGenDir, "seed generation directory")
 	rootCmd.PersistentFlags().StringVar(&modelsDir, "models", cfg.ModelsDir, "models directory")
 
 	rootCmd.AddCommand(Commands(cfg)...)
@@ -182,18 +184,53 @@ func newSeedgenCommand() *cobra.Command {
 	}
 }
 
+/*
+	func newGenerateCommand() *cobra.Command {
+		return &cobra.Command{
+			Use:   "generate",
+			Short: "Generate migration files from models (snapshot + incremental)",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				models, err := helpers.LoadModels()
+				if err != nil {
+					return err
+				}
+				return driftflow.GenerateModelMigrations(models, migDir)
+			},
+		}
+	}
+*/
+
 func newGenerateCommand() *cobra.Command {
+	var repair bool
+	var adopt bool
+
 	return &cobra.Command{
 		Use:   "generate",
-		Short: "Generate migration files from models",
+		Short: "Generate migration files from models (snapshot + incremental)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			models, err := helpers.LoadModels()
 			if err != nil {
 				return err
 			}
-			return driftflow.GenerateModelMigrations(models, migDir)
+
+			opts := driftflow.GenerateOptions{
+				Dir:          migDir,
+				ManifestMode: driftflow.ManifestStrict, // default
+			}
+
+			if repair {
+				opts.ManifestMode = driftflow.ManifestRepair
+				opts.RepairAddUntracked = adopt
+			}
+
+			return driftflow.GenerateModelMigrations(models, opts)
 		},
 	}
+
+	/*cmd.Flags().BoolVar(&repair, "repair", false, "Repair modified migration files (recalculate hashes)")
+	cmd.Flags().BoolVar(&adopt, "adopt", false, "Adopt untracked migration files into manifest (requires --repair)")
+
+	return cmd*/
 }
 
 func newMigrateCommand() *cobra.Command {

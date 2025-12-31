@@ -1,6 +1,8 @@
 package driftflow
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -23,6 +25,8 @@ import (
 type SchemaMigration struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Version   string    `gorm:"uniqueIndex" json:"version"`
+	Batch     int       `gorm:"not null"`
+	Checksum  string    `gorm:"size:64;not null"` // sha256
 	AppliedAt time.Time `gorm:"autoCreateTime" json:"applied_at"`
 }
 
@@ -213,7 +217,7 @@ func modelsSchema(db *gorm.DB, models []interface{}) (schemaInfo, error) {
 }
 
 // Up applies all pending migrations found in dir.
-func Up(db *gorm.DB, dir string) error {
+/*func Up(db *gorm.DB, dir string) error {
 	if err := config.ValidateDir(dir); err != nil {
 		return err
 	}
@@ -248,6 +252,81 @@ func Up(db *gorm.DB, dir string) error {
 		LogAuditEvent(db, version, "apply")
 	}
 	return nil
+}*/
+
+func Up(db *gorm.DB, dir string) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
+	if err := ensureMigrationsTable(db); err != nil {
+		return err
+	}
+
+	ups, _, err := readMigrationFiles(dir)
+	if err != nil {
+		return err
+	}
+
+	// nuevo batch = max(batch)+1
+	var lastBatch int
+	_ = db.Model(&SchemaMigration{}).
+		Select("COALESCE(MAX(batch),0)").
+		Scan(&lastBatch).Error
+	newBatch := lastBatch + 1
+
+	for _, f := range ups {
+		version := migrationVersionFromFilename(f) // ✅ usa filename estable
+		sqlBytes, err := os.ReadFile(f)
+		if err != nil {
+			return err
+		}
+		checksum := sha256Hex(sqlBytes)
+
+		// ya aplicada?
+		var m SchemaMigration
+		err = db.Where("version = ?", version).First(&m).Error
+		if err == nil {
+			// ✅ si ya existe, valida checksum (opcional pero recomendado)
+			if m.Checksum != checksum {
+				return fmt.Errorf("migration modified after applied: %s", version)
+			}
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		// ✅ aplicar en transacción
+		if err := db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Exec(string(sqlBytes)).Error; err != nil {
+				return fmt.Errorf("apply %s: %w", f, err)
+			}
+			rec := SchemaMigration{
+				Version:   version,
+				Batch:     newBatch,
+				Checksum:  checksum,
+				AppliedAt: time.Now().UTC(),
+			}
+			if err := tx.Create(&rec).Error; err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func migrationVersionFromFilename(path string) string {
+	base := filepath.Base(path)                // 2025_..._create_X_table.up.sql
+	return strings.TrimSuffix(base, ".up.sql") // 2025_..._create_X_table
+}
+
+func sha256Hex(b []byte) string {
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }
 
 // Down rolls back migrations until targetVersion is reached.
@@ -994,7 +1073,7 @@ func duplicateContent(dir, pattern, sql string) bool {
 
 // GenerateModelMigrations compares models with existing migration files and
 // writes new migration files for any differences found.
-func GenerateModelMigrations(models []interface{}, dir string) error {
+/*func GenerateModelMigrations(models []interface{}, dir string) error {
 	if dir == "" {
 		dir = os.Getenv("MIG_DIR")
 		if dir == "" {
@@ -1082,4 +1161,4 @@ func GenerateModelMigrations(models []interface{}, dir string) error {
 		}
 	}
 	return nil
-}
+}*/
