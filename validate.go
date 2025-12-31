@@ -11,7 +11,7 @@ import (
 )
 
 // Validate checks migration files for common issues such as duplicated names
-// or missing down migration files.
+// or invalid migration sections.
 func Validate(dir string) error {
 	if err := config.ValidateDir(dir); err != nil {
 		return err
@@ -27,10 +27,10 @@ func Validate(dir string) error {
 	namingIssues := []string{}
 
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".up.sql") {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".sql") {
 			continue
 		}
-		base := strings.TrimSuffix(e.Name(), ".up.sql")
+		base := strings.TrimSuffix(e.Name(), ".sql")
 		ver := base
 		if idx := strings.Index(base, "_"); idx != -1 {
 			ver = base[:idx]
@@ -40,15 +40,12 @@ func Validate(dir string) error {
 			continue
 		}
 		seen[ver] = struct{}{}
-		if _, err := os.Stat(filepath.Join(dir, base+".down.sql")); os.IsNotExist(err) {
-			missingDown = append(missingDown, base)
-		}
-
-		sqlBytes, err := os.ReadFile(filepath.Join(dir, base+".up.sql"))
+		upSQL, _, err := readMigrationSections(filepath.Join(dir, base+".sql"))
 		if err != nil {
-			return err
+			missingDown = append(missingDown, base)
+			continue
 		}
-		namingIssues = append(namingIssues, checkNamingConventions(string(sqlBytes))...)
+		namingIssues = append(namingIssues, checkNamingConventions(upSQL)...)
 	}
 	if len(duplicates) > 0 || len(missingDown) > 0 || len(namingIssues) > 0 {
 		var sb strings.Builder
@@ -60,7 +57,7 @@ func Validate(dir string) error {
 			if sb.Len() > 0 {
 				sb.WriteString("; ")
 			}
-			sb.WriteString("missing down files: ")
+			sb.WriteString("invalid migration files: ")
 			sb.WriteString(strings.Join(missingDown, ", "))
 		}
 		if len(namingIssues) > 0 {

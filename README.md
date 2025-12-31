@@ -31,7 +31,17 @@ driftflow validate   # validate migration directory
 ### Migration file naming
 
 Generated migrations use a timestamp prefix similar to other frameworks. Files
-are created as `YYYYMMDDHHMMSS_table.up.sql` and `YYYYMMDDHHMMSS_table.down.sql`.
+are created as `YYYYMMDDHHMMSS_table.sql` and include both directions using
+section markers:
+
+```sql
+-- +migrate Up
+CREATE TABLE example (id int);
+
+-- +migrate Down
+DROP TABLE example;
+```
+
 This keeps migrations ordered chronologically and simplifies rollbacks.
 
 ### Using the CLI programmatically

@@ -6,18 +6,13 @@ import (
 	"testing"
 )
 
-// writeMigration crea los archivos .up.sql y .down.sql con contenido
+// writeMigration crea el archivo .sql con contenido Up/Down.
 func writeMigration(t *testing.T, dir, name, upSQL, downSQL string) {
 	t.Helper()
-
-	upPath := filepath.Join(dir, name+".up.sql")
-	downPath := filepath.Join(dir, name+".down.sql")
-
-	if err := os.WriteFile(upPath, []byte(upSQL), 0o644); err != nil {
-		t.Fatalf("failed to write %s: %v", upPath, err)
-	}
-	if err := os.WriteFile(downPath, []byte(downSQL), 0o644); err != nil {
-		t.Fatalf("failed to write %s: %v", downPath, err)
+	path := filepath.Join(dir, name+".sql")
+	content := formatMigrationFile(upSQL, downSQL)
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("failed to write %s: %v", path, err)
 	}
 }
 
@@ -33,7 +28,7 @@ func TestValidateDuplicate(t *testing.T) {
 
 func TestValidateMissingDown(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "002_missing.up.sql"), []byte("CREATE TABLE test(id int);"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "002_missing.sql"), []byte("CREATE TABLE test(id int);"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
