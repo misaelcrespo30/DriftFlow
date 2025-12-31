@@ -78,6 +78,18 @@ func readMigrationSections(path string) (string, string, error) {
 	return splitMigrationSections(string(b))
 }
 
+func readMigrationFile(path string) (string, string, string, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", "", "", err
+	}
+	upSQL, downSQL, err := splitMigrationSections(string(b))
+	if err != nil {
+		return "", "", "", err
+	}
+	return upSQL, downSQL, sha256Hex(b), nil
+}
+
 func writeMigrationFile(dir, baseName, upSQL, downSQL string) error {
 	path := filepath.Join(dir, baseName+".sql")
 

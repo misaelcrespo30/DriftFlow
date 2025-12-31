@@ -45,7 +45,9 @@ func readMigrationFiles(dir string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(files)
+	sort.Slice(files, func(i, j int) bool {
+		return migrationVersionFromFilename(files[i]) < migrationVersionFromFilename(files[j])
+	})
 	return files, nil
 }
 
@@ -256,7 +258,7 @@ func Up(db *gorm.DB, dir string) error {
 		return err
 	}
 
-	ups, _, err := readMigrationFiles(dir)
+	ups, err := readMigrationFiles(dir)
 	if err != nil {
 		return err
 	}
@@ -270,15 +272,10 @@ func Up(db *gorm.DB, dir string) error {
 
 	for _, f := range ups {
 		version := migrationVersionFromFilename(f) // ✅ usa filename estable
-		sqlBytes, err := os.ReadFile(f)
+		upSQL, _, checksum, err := readMigrationFile(f)
 		if err != nil {
 			return err
 		}
-		upSQL, _, err := splitMigrationSections(string(sqlBytes))
-		if err != nil {
-			return err
-		}
-		checksum := sha256Hex(sqlBytes)
 
 		// ya aplicada?
 		var m SchemaMigration
@@ -329,47 +326,7 @@ func sha256Hex(b []byte) string {
 
 // Down rolls back migrations until targetVersion is reached.
 func Down(db *gorm.DB, dir string, targetVersion string) error {
-	if err := config.ValidateDir(dir); err != nil {
-		return err
-	}
-	if err := ensureMigrationsTable(db); err != nil {
-		return err
-	}
-	_ = EnsureAuditTable(db)
-	_ = EnsureFieldHistoryTable(db)
-	downs, err := readMigrationFiles(dir)
-	if err != nil {
-		return err
-	}
-	downMap := make(map[string]string)
-	for _, f := range downs {
-		downMap[migrationVersion(f)] = f
-	}
-	var applied []SchemaMigration
-	if err := db.Order("id desc").Find(&applied).Error; err != nil {
-		return err
-	}
-	for _, m := range applied {
-		if m.Version == targetVersion {
-			break
-		}
-		file, ok := downMap[m.Version]
-		if !ok {
-			return fmt.Errorf("missing down file for %s", m.Version)
-		}
-		_, downSQL, err := readMigrationSections(file)
-		if err != nil {
-			return err
-		}
-		if err := db.Exec(downSQL).Error; err != nil {
-			return fmt.Errorf("revert %s: %w", file, err)
-		}
-		if err := removeMigration(db, m.Version); err != nil {
-			return err
-		}
-		LogAuditEvent(db, m.Version, "rollback")
-	}
-	return nil
+	return MigrateTo(db, dir, targetVersion)
 }
 
 // DownSteps rolls back the most recent N migrations. If steps is less than 1
@@ -389,33 +346,164 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 		return err
 	}
 	downMap := make(map[string]string)
+	var versions []string
 	for _, f := range downs {
-		downMap[migrationVersion(f)] = f
+		version := migrationVersionFromFilename(f)
+		downMap[version] = f
+		versions = append(versions, version)
 	}
 	var applied []SchemaMigration
-	if err := db.Order("id desc").Find(&applied).Error; err != nil {
+	if err := db.Order("id asc").Find(&applied).Error; err != nil {
 		return err
 	}
-	if steps < 1 || steps > len(applied) {
-		steps = len(applied)
+	appliedSet := make(map[string]SchemaMigration, len(applied))
+	for _, m := range applied {
+		appliedSet[m.Version] = m
+	}
+	var appliedOrdered []string
+	for _, v := range versions {
+		if _, ok := appliedSet[v]; ok {
+			appliedOrdered = append(appliedOrdered, v)
+		}
+	}
+	if steps < 1 || steps > len(appliedOrdered) {
+		steps = len(appliedOrdered)
 	}
 	for i := 0; i < steps; i++ {
-		m := applied[i]
-		file, ok := downMap[m.Version]
+		version := appliedOrdered[len(appliedOrdered)-1-i]
+		file, ok := downMap[version]
 		if !ok {
-			return fmt.Errorf("missing down file for %s", m.Version)
+			return fmt.Errorf("missing down file for %s", version)
 		}
-		_, downSQL, err := readMigrationSections(file)
+		_, downSQL, _, err := readMigrationFile(file)
 		if err != nil {
 			return err
 		}
 		if err := db.Exec(downSQL).Error; err != nil {
 			return fmt.Errorf("revert %s: %w", file, err)
 		}
-		if err := removeMigration(db, m.Version); err != nil {
+		if err := removeMigration(db, version); err != nil {
 			return err
 		}
-		LogAuditEvent(db, m.Version, "rollback")
+		LogAuditEvent(db, version, "rollback")
+	}
+	return nil
+}
+
+// MigrateTo applies or rolls back migrations until the target version is reached.
+func MigrateTo(db *gorm.DB, dir string, targetVersion string) error {
+	if err := config.ValidateDir(dir); err != nil {
+		return err
+	}
+	if err := ensureMigrationsTable(db); err != nil {
+		return err
+	}
+	_ = EnsureAuditTable(db)
+	_ = EnsureFieldHistoryTable(db)
+
+	files, err := readMigrationFiles(dir)
+	if err != nil {
+		return err
+	}
+	versionToFile := make(map[string]string, len(files))
+	var versions []string
+	for _, f := range files {
+		version := migrationVersionFromFilename(f)
+		versionToFile[version] = f
+		versions = append(versions, version)
+	}
+
+	targetIndex := -1
+	for i, v := range versions {
+		if v == targetVersion {
+			targetIndex = i
+			break
+		}
+	}
+	if targetIndex == -1 {
+		return fmt.Errorf("target version not found: %s", targetVersion)
+	}
+
+	var applied []SchemaMigration
+	if err := db.Order("id asc").Find(&applied).Error; err != nil {
+		return err
+	}
+	appliedSet := make(map[string]SchemaMigration, len(applied))
+	for _, m := range applied {
+		if _, ok := versionToFile[m.Version]; !ok {
+			return fmt.Errorf("applied migration missing from disk: %s", m.Version)
+		}
+		appliedSet[m.Version] = m
+	}
+
+	currentIndex := -1
+	seenGap := false
+	for i, v := range versions {
+		if _, ok := appliedSet[v]; ok {
+			if seenGap {
+				return fmt.Errorf("applied migrations are not contiguous; missing %s", versions[currentIndex+1])
+			}
+			currentIndex = i
+		} else if currentIndex != -1 {
+			seenGap = true
+		}
+	}
+
+	if currentIndex == targetIndex {
+		return nil
+	}
+
+	if currentIndex < targetIndex {
+		var lastBatch int
+		_ = db.Model(&SchemaMigration{}).
+			Select("COALESCE(MAX(batch),0)").
+			Scan(&lastBatch).Error
+		newBatch := lastBatch + 1
+
+		for i := currentIndex + 1; i <= targetIndex; i++ {
+			version := versions[i]
+			file := versionToFile[version]
+			upSQL, _, checksum, err := readMigrationFile(file)
+			if err != nil {
+				return err
+			}
+
+			if err := db.Transaction(func(tx *gorm.DB) error {
+				if err := tx.Exec(upSQL).Error; err != nil {
+					return fmt.Errorf("apply %s: %w", file, err)
+				}
+				rec := SchemaMigration{
+					Version:   version,
+					Batch:     newBatch,
+					Checksum:  checksum,
+					AppliedAt: time.Now().UTC(),
+				}
+				if err := tx.Create(&rec).Error; err != nil {
+					return err
+				}
+				return nil
+			}); err != nil {
+				return err
+			}
+			LogAuditEvent(db, version, "apply")
+		}
+		return nil
+	}
+
+	for i := currentIndex; i > targetIndex; i-- {
+		version := versions[i]
+		file := versionToFile[version]
+		_, downSQL, _, err := readMigrationFile(file)
+		if err != nil {
+			return err
+		}
+		if err := db.Exec(downSQL).Error; err != nil {
+			return fmt.Errorf("revert %s: %w", file, err)
+		}
+		if err := removeMigration(db, version); err != nil {
+			return err
+		}
+		LogAuditEvent(db, version, "rollback")
 	}
 	return nil
 }
