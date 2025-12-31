@@ -1,7 +1,7 @@
 package seed
 
 import (
-	"github.com/Elevitae/elevitae-backend/libs/helpers"
+	"github.com/misaelcrespo30/DriftFlow/helpers"
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/models"
 	"gorm.io/gorm"
 	"log"
