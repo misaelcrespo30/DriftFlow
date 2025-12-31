@@ -8,7 +8,19 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/misaelcrespo30/DriftFlow/config"
 )
+
+const seedTemplateCount = 10
+
+type seedModelInfo struct {
+	modelType     reflect.Type
+	primaryJSON   string
+	primaryType   reflect.Type
+	primaryIsText bool
+}
 
 func dummyValue(t reflect.Type, idx int, base time.Time) interface{} {
 	if t.Kind() == reflect.Pointer {
@@ -44,16 +56,34 @@ func GenerateSeedTemplates(models []interface{}, dir string) error {
 // field name. If no generator is found for a field, a zero value is used.
 func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[string]func() interface{}) error {
 	if strings.TrimSpace(dir) == "" {
-		dir = os.Getenv("SEED_GEN_DIR")
+		cfg := config.Load()
+		dir = cfg.SeedGenDir
 		if strings.TrimSpace(dir) == "" {
-			dir = "seed"
-			fmt.Println("No se definió 'SEED_GEN_DIR', se usará ruta por defecto: ./seed")
+			dir = "internal/database/data"
+			fmt.Println("No se definió 'SEED_GEN_DIR', se usará ruta por defecto:", dir)
 		}
 	}
 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
+
+	modelInfos := buildSeedModelInfo(models)
+	infoByType := make(map[reflect.Type]seedModelInfo, len(modelInfos))
+	primaryIDs := make(map[reflect.Type][]string)
+	primaryByJSON := make(map[string]seedModelInfo)
+	for _, info := range modelInfos {
+		infoByType[info.modelType] = info
+		if info.primaryJSON != "" && info.primaryIsText {
+			ids := make([]string, seedTemplateCount)
+			for i := 0; i < seedTemplateCount; i++ {
+				ids[i] = uuid.NewString()
+			}
+			primaryIDs[info.modelType] = ids
+			primaryByJSON[info.primaryJSON] = info
+		}
+	}
+
 	base := time.Now()
 	for _, m := range models {
 		t := reflect.TypeOf(m)
@@ -66,8 +96,8 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		file := strings.ToLower(t.Name()) + ".seed.json"
 		path := filepath.Join(dir, file)
 
-		objs := make([]*orderedMap, 10)
-		for i := 0; i < 10; i++ {
+		objs := make([]*orderedMap, seedTemplateCount)
+		for i := 0; i < seedTemplateCount; i++ {
 			obj := newOrderedMap()
 			for j := 0; j < t.NumField(); j++ {
 				f := t.Field(j)
@@ -95,6 +125,14 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 						continue
 					}
 				}
+				if id, ok := primaryIDValue(primaryIDs, infoByType, t, name, i); ok {
+					obj.set(name, id)
+					continue
+				}
+				if id, ok := foreignIDValue(primaryIDs, primaryByJSON, t, name, i); ok {
+					obj.set(name, id)
+					continue
+				}
 				obj.set(name, dummyValue(f.Type, i, base))
 			}
 			objs[i] = obj
@@ -109,4 +147,94 @@ func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[st
 		}
 	}
 	return nil
+}
+
+func buildSeedModelInfo(models []interface{}) []seedModelInfo {
+	infos := make([]seedModelInfo, 0, len(models))
+	for _, m := range models {
+		t := reflect.TypeOf(m)
+		if t == nil {
+			continue
+		}
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() != reflect.Struct {
+			continue
+		}
+		info := seedModelInfo{modelType: t}
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+			if f.Anonymous && f.Type.PkgPath() == "gorm.io/gorm" && f.Type.Name() == "Model" {
+				continue
+			}
+			gtag := f.Tag.Get("gorm")
+			if gtag == "-" || strings.Contains(gtag, "->") {
+				continue
+			}
+			if !strings.Contains(gtag, "primaryKey") {
+				continue
+			}
+			tag := f.Tag.Get("json")
+			if strings.Split(tag, ",")[0] == "-" {
+				continue
+			}
+			name := strings.Split(tag, ",")[0]
+			if name == "" {
+				name = strings.ToLower(f.Name)
+			}
+			info.primaryJSON = name
+			info.primaryType = f.Type
+			info.primaryIsText = isTextType(f.Type)
+			break
+		}
+		infos = append(infos, info)
+	}
+	return infos
+}
+
+func primaryIDValue(primaryIDs map[reflect.Type][]string, infoByType map[reflect.Type]seedModelInfo, modelType reflect.Type, jsonName string, idx int) (string, bool) {
+	ids, ok := primaryIDs[modelType]
+	if !ok {
+		return "", false
+	}
+	if idx < 0 || idx >= len(ids) {
+		return "", false
+	}
+	info, ok := infoByType[modelType]
+	if !ok {
+		return "", false
+	}
+	if jsonName == "" {
+		return "", false
+	}
+	if info.primaryJSON != "" && jsonName != info.primaryJSON {
+		return "", false
+	}
+	return ids[idx], true
+}
+
+func foreignIDValue(primaryIDs map[reflect.Type][]string, primaryByJSON map[string]seedModelInfo, modelType reflect.Type, jsonName string, idx int) (string, bool) {
+	rel, ok := primaryByJSON[jsonName]
+	if !ok {
+		return "", false
+	}
+	if rel.modelType == modelType {
+		return "", false
+	}
+	ids, ok := primaryIDs[rel.modelType]
+	if !ok || len(ids) == 0 {
+		return "", false
+	}
+	return ids[idx%len(ids)], true
+}
+
+func isTextType(t reflect.Type) bool {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.String
 }
