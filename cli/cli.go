@@ -160,18 +160,14 @@ func newSeedCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			if err != nil {
-				return err
-			}
-			return driftflow.Seed(db, seedGenDir)
+			return driftflow.Seed(db, seedRunDir)
 
 		},
 	}
 }
 
 func newSeedgenCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "seedgen",
 		Short: "Generate JSON seed templates from models",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -182,6 +178,7 @@ func newSeedgenCommand() *cobra.Command {
 			return driftflow.GenerateSeedTemplates(models, seedGenDir)
 		},
 	}
+	return cmd
 }
 
 /*
