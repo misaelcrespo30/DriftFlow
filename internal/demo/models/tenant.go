@@ -15,7 +15,7 @@ type Tenant struct {
 	RecoveryState string    `gorm:"column:recovery_state;size:50;not null" json:"recovery_state"`
 	LastUpdated   time.Time `gorm:"column:last_updated;not null" json:"last_updated"`
 
-	ConnectionString string `gorm:"column:connection_string;type:text;not null" json:"connection_string"`
+	ConnectionString string `gorm:"column:connection_string;type:text;not null" json:"connection_string" validate:"required,contains=://"`
 
 	IsAvailable  bool `gorm:"column:is_available;not null;default:false" json:"is_available"`
 	IsDataSeeded bool `gorm:"column:is_data_seeded;not null;default:false" json:"is_data_seeded"`
