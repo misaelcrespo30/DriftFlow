@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/misaelcrespo30/DriftFlow/internal/database/seed"
-
 	driftcli "github.com/misaelcrespo30/DriftFlow/cli"
 	"github.com/misaelcrespo30/DriftFlow/config"
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/models"
