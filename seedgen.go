@@ -56,28 +56,28 @@ func GenerateSeedTemplates(models []interface{}, dir string) error {
 // GenerateSeedAssets writes JSON seed templates and Go seeder scaffolding for
 // the provided models into internal/database/{data,seed} (or a custom dir).
 func GenerateSeedAssets(models []interface{}, dir string) error {
-	resolvedDir, err := resolveSeedGenDir(dir)
+	dataDir, seedDir, err := resolveSeedGenDirs(dir)
 	if err != nil {
 		return err
 	}
-	if err := generateSeedTemplates(models, resolvedDir, nil); err != nil {
+	if err := generateSeedTemplates(models, dataDir, nil); err != nil {
 		return err
 	}
-	return generateSeedScaffold(models, resolvedDir)
+	return generateSeedScaffold(models, seedDir)
 }
 
 // GenerateSeedTemplatesWithData is like GenerateSeedTemplates but allows providing
 // custom generator functions for field values. The map key should match the JSON
 // field name. If no generator is found for a field, a zero value is used.
 func GenerateSeedTemplatesWithData(models []interface{}, dir string, gens map[string]func() interface{}) error {
-	resolvedDir, err := resolveSeedGenDir(dir)
+	dataDir, _, err := resolveSeedGenDirs(dir)
 	if err != nil {
 		return err
 	}
-	return generateSeedTemplates(models, resolvedDir, gens)
+	return generateSeedTemplates(models, dataDir, gens)
 }
 
-func resolveSeedGenDir(dir string) (string, error) {
+func resolveSeedGenDirs(dir string) (string, string, error) {
 	if strings.TrimSpace(dir) == "" {
 		cfg := config.Load()
 		dir = cfg.SeedGenDir
@@ -86,10 +86,19 @@ func resolveSeedGenDir(dir string) (string, error) {
 			fmt.Println("No se definió 'SEED_GEN_DIR', se usará ruta por defecto:", dir)
 		}
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
+	baseDir := dir
+	if filepath.Base(dir) == "data" {
+		baseDir = filepath.Dir(dir)
 	}
-	return dir, nil
+	dataDir := filepath.Join(baseDir, "data")
+	seedDir := filepath.Join(baseDir, "seed")
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		return "", "", err
+	}
+	if err := os.MkdirAll(seedDir, 0o755); err != nil {
+		return "", "", err
+	}
+	return dataDir, seedDir, nil
 }
 
 func generateSeedTemplates(models []interface{}, dir string, gens map[string]func() interface{}) error {
@@ -174,12 +183,7 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 	return nil
 }
 
-func generateSeedScaffold(models []interface{}, dataDir string) error {
-	seedDir := filepath.Join(filepath.Dir(dataDir), "seed")
-	if err := os.MkdirAll(seedDir, 0o755); err != nil {
-		return err
-	}
-
+func generateSeedScaffold(models []interface{}, seedDir string) error {
 	seeders := make([]string, 0, len(models))
 	written := map[string]struct{}{}
 
