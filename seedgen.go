@@ -53,6 +53,10 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 	}
 	name = strings.ToLower(name)
 
+	if name == "connection_string" {
+		return fmt.Sprintf("postgres://user%d:pass@localhost:5432/db%d", idx+1, idx+1)
+	}
+
 	if name == "email" {
 		return fmt.Sprintf("user%d@example.com", idx+1)
 	}
@@ -121,6 +125,25 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 	}
 
 	return dummyValue(t, idx, base)
+}
+
+func hasPasswordHashField(t reflect.Type) bool {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return false
+	}
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if !f.IsExported() {
+			continue
+		}
+		if f.Name == "PasswordHash" {
+			return true
+		}
+	}
+	return false
 }
 
 func isFirstNameField(name string) bool {
@@ -282,6 +305,7 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 		path := filepath.Join(dir, file)
 
 		objs := make([]*orderedMap, seedTemplateCount)
+		hasPassword := hasPasswordHashField(t)
 		for i := 0; i < seedTemplateCount; i++ {
 			obj := newOrderedMap()
 			for j := 0; j < t.NumField(); j++ {
@@ -319,6 +343,9 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 					continue
 				}
 				obj.set(name, dummyValueForField(name, f.Type, i, base))
+			}
+			if hasPassword {
+				obj.set("password_hash", fmt.Sprintf("password%d", i+1))
 			}
 			objs[i] = obj
 		}
@@ -363,7 +390,7 @@ func generateSeedScaffold(models []interface{}, seedDir string) error {
 		}
 		written[fileName] = struct{}{}
 
-		source := buildSeederSource(pkgPath, t.Name(), seederName)
+		source := buildSeederSource(pkgPath, t.Name(), seederName, hasPasswordHashField(t))
 		formatted, err := format.Source(source)
 		if err != nil {
 			return err
@@ -382,23 +409,51 @@ func generateSeedScaffold(models []interface{}, seedDir string) error {
 	return os.WriteFile(filepath.Join(seedDir, "register.go"), formatted, 0o644)
 }
 
-func buildSeederSource(pkgPath, modelName, seederName string) []byte {
+func buildSeederSource(pkgPath, modelName, seederName string, hashPasswords bool) []byte {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "package seed\n\n")
 	fmt.Fprintf(&buf, "import (\n")
 	fmt.Fprintf(&buf, "\t\"encoding/json\"\n")
+	if hashPasswords {
+		fmt.Fprintf(&buf, "\t\"fmt\"\n")
+	}
 	fmt.Fprintf(&buf, "\t\"os\"\n\n")
 	fmt.Fprintf(&buf, "\tmodels \"%s\"\n", pkgPath)
+	if hashPasswords {
+		fmt.Fprintf(&buf, "\t\"golang.org/x/crypto/bcrypt\"\n")
+	}
 	fmt.Fprintf(&buf, "\t\"gorm.io/gorm\"\n")
 	fmt.Fprintf(&buf, ")\n\n")
 	fmt.Fprintf(&buf, "type %s struct{}\n\n", seederName)
+	if hashPasswords {
+		fmt.Fprintf(&buf, "type %sSeed struct {\n", strings.ToLower(modelName))
+		fmt.Fprintf(&buf, "\tmodels.%s\n", modelName)
+		fmt.Fprintf(&buf, "\tPassword string `json:\"password_hash\"`\n")
+		fmt.Fprintf(&buf, "}\n\n")
+	}
 	fmt.Fprintf(&buf, "func (s %s) Seed(db *gorm.DB, filePath string) error {\n", seederName)
 	fmt.Fprintf(&buf, "\tdata, err := os.ReadFile(filePath)\n")
 	fmt.Fprintf(&buf, "\tif err != nil {\n\t\treturn err\n\t}\n\n")
-	fmt.Fprintf(&buf, "\tvar rows []models.%s\n", modelName)
-	fmt.Fprintf(&buf, "\tif err := json.Unmarshal(data, &rows); err != nil {\n\t\treturn err\n\t}\n")
-	fmt.Fprintf(&buf, "\tif len(rows) == 0 {\n\t\treturn nil\n\t}\n\n")
-	fmt.Fprintf(&buf, "\treturn db.Create(&rows).Error\n")
+	if hashPasswords {
+		fmt.Fprintf(&buf, "\tvar rows []%sSeed\n", strings.ToLower(modelName))
+		fmt.Fprintf(&buf, "\tif err := json.Unmarshal(data, &rows); err != nil {\n\t\treturn err\n\t}\n")
+		fmt.Fprintf(&buf, "\tif len(rows) == 0 {\n\t\treturn nil\n\t}\n\n")
+		fmt.Fprintf(&buf, "\titems := make([]models.%s, 0, len(rows))\n", modelName)
+		fmt.Fprintf(&buf, "\tfor _, row := range rows {\n")
+		fmt.Fprintf(&buf, "\t\thashedPassword, err := bcrypt.GenerateFromPassword([]byte(row.Password), bcrypt.DefaultCost)\n")
+		fmt.Fprintf(&buf, "\t\tif err != nil {\n")
+		fmt.Fprintf(&buf, "\t\t\treturn fmt.Errorf(\"hashing password for %s %%s: %%w\", row.Email, err)\n", strings.ToLower(modelName))
+		fmt.Fprintf(&buf, "\t\t}\n")
+		fmt.Fprintf(&buf, "\t\trow.%s.PasswordHash = string(hashedPassword)\n", modelName)
+		fmt.Fprintf(&buf, "\t\titems = append(items, row.%s)\n", modelName)
+		fmt.Fprintf(&buf, "\t}\n\n")
+		fmt.Fprintf(&buf, "\treturn db.Create(&items).Error\n")
+	} else {
+		fmt.Fprintf(&buf, "\tvar rows []models.%s\n", modelName)
+		fmt.Fprintf(&buf, "\tif err := json.Unmarshal(data, &rows); err != nil {\n\t\treturn err\n\t}\n")
+		fmt.Fprintf(&buf, "\tif len(rows) == 0 {\n\t\treturn nil\n\t}\n\n")
+		fmt.Fprintf(&buf, "\treturn db.Create(&rows).Error\n")
+	}
 	fmt.Fprintf(&buf, "}\n")
 	return buf.Bytes()
 }

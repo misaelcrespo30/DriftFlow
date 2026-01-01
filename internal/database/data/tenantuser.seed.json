@@ -24,7 +24,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user1:pass@localhost:5432/db1",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -38,7 +38,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user1:pass@localhost:5432/db1"
   },
   {
     "id": "89185f93-c0e6-4463-b09a-12c5abfb4a2c",
@@ -65,7 +66,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user2:pass@localhost:5432/db2",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -79,7 +80,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user2:pass@localhost:5432/db2"
   },
   {
     "id": "980ac50f-90ba-477c-bc93-ffd108a5ba22",
@@ -106,7 +108,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user3:pass@localhost:5432/db3",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -120,7 +122,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user3:pass@localhost:5432/db3"
   },
   {
     "id": "6e770938-8dc2-465a-b12f-8a393bcc91c9",
@@ -147,7 +150,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user4:pass@localhost:5432/db4",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -161,7 +164,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user4:pass@localhost:5432/db4"
   },
   {
     "id": "2f95c877-4a2b-4d0b-81c3-4af3f0a7d068",
@@ -188,7 +192,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user5:pass@localhost:5432/db5",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -202,7 +206,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user5:pass@localhost:5432/db5"
   },
   {
     "id": "8986fc0e-9bd7-44c0-981c-f2145554f3bd",
@@ -229,7 +234,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user6:pass@localhost:5432/db6",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -243,7 +248,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user6:pass@localhost:5432/db6"
   },
   {
     "id": "cb3c2bc9-a10c-4ad6-9c7d-2e5eaf2fd782",
@@ -270,7 +276,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user7:pass@localhost:5432/db7",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -284,7 +290,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user7:pass@localhost:5432/db7"
   },
   {
     "id": "78305645-48cf-4e39-bbdb-7860a317d014",
@@ -311,7 +318,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user8:pass@localhost:5432/db8",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -325,7 +332,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user8:pass@localhost:5432/db8"
   },
   {
     "id": "f2764d64-a68c-455a-b457-d6e55586c195",
@@ -352,7 +360,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user9:pass@localhost:5432/db9",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -366,7 +374,8 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user9:pass@localhost:5432/db9"
   },
   {
     "id": "dd7ebdd7-7870-4ca8-81ad-c41c0888952c",
@@ -393,7 +402,7 @@
       "service_plan": "",
       "recovery_state": "",
       "last_updated": "0001-01-01T00:00:00Z",
-      "connection_string": "",
+      "connection_string": "postgres://user10:pass@localhost:5432/db10",
       "is_available": false,
       "is_data_seeded": false,
       "should_delete": false,
@@ -407,6 +416,7 @@
       "subscription_item_id": null,
       "misael": "",
       "padron": ""
-    }
+    },
+    "connection_string": "postgres://user10:pass@localhost:5432/db10"
   }
 ]

@@ -11,7 +11,8 @@
     "is_phone_confirmed": true,
     "security_stamp": "value 1",
     "tenant_users": null,
-    "misael": "value 1"
+    "misael": "value 1",
+    "password_hash": "password1"
   },
   {
     "user_id": "c2fcd705-c9f5-4388-b84c-b585ffc0a687",
@@ -25,7 +26,8 @@
     "is_phone_confirmed": false,
     "security_stamp": "value 2",
     "tenant_users": null,
-    "misael": "value 2"
+    "misael": "value 2",
+    "password_hash": "password2"
   },
   {
     "user_id": "835990d1-8929-40b0-b732-bd9a22e28fd8",
@@ -39,7 +41,8 @@
     "is_phone_confirmed": true,
     "security_stamp": "value 3",
     "tenant_users": null,
-    "misael": "value 3"
+    "misael": "value 3",
+    "password_hash": "password3"
   },
   {
     "user_id": "0d779fda-a46b-4bd2-9545-ce53fe8bc53f",
@@ -53,7 +56,8 @@
     "is_phone_confirmed": false,
     "security_stamp": "value 4",
     "tenant_users": null,
-    "misael": "value 4"
+    "misael": "value 4",
+    "password_hash": "password4"
   },
   {
     "user_id": "449b9f6b-5d8c-4c4f-92f8-0d32b0b7bd56",
@@ -67,7 +71,8 @@
     "is_phone_confirmed": true,
     "security_stamp": "value 5",
     "tenant_users": null,
-    "misael": "value 5"
+    "misael": "value 5",
+    "password_hash": "password5"
   },
   {
     "user_id": "34a9236c-7426-4090-a277-ce213267ddab",
@@ -81,7 +86,8 @@
     "is_phone_confirmed": false,
     "security_stamp": "value 6",
     "tenant_users": null,
-    "misael": "value 6"
+    "misael": "value 6",
+    "password_hash": "password6"
   },
   {
     "user_id": "3b7128cf-8564-42a7-9dc4-b362c7049a37",
@@ -95,7 +101,8 @@
     "is_phone_confirmed": true,
     "security_stamp": "value 7",
     "tenant_users": null,
-    "misael": "value 7"
+    "misael": "value 7",
+    "password_hash": "password7"
   },
   {
     "user_id": "fbd9570b-9d99-4588-978a-8e4c260db171",
@@ -109,7 +116,8 @@
     "is_phone_confirmed": false,
     "security_stamp": "value 8",
     "tenant_users": null,
-    "misael": "value 8"
+    "misael": "value 8",
+    "password_hash": "password8"
   },
   {
     "user_id": "f5386393-1d16-41c9-8b9c-278e871be859",
@@ -123,7 +131,8 @@
     "is_phone_confirmed": true,
     "security_stamp": "value 9",
     "tenant_users": null,
-    "misael": "value 9"
+    "misael": "value 9",
+    "password_hash": "password9"
   },
   {
     "user_id": "c0766ba0-4f18-442c-b4c1-d4697f123eee",
@@ -137,6 +146,7 @@
     "is_phone_confirmed": false,
     "security_stamp": "value 10",
     "tenant_users": null,
-    "misael": "value 10"
+    "misael": "value 10",
+    "password_hash": "password10"
   }
 ]
