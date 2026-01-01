@@ -61,6 +61,45 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 		return fmt.Sprintf("user%d", idx+1)
 	}
 
+	if isFirstNameField(name) {
+		return firstNameForIndex(idx)
+	}
+
+	if isLastNameField(name) {
+		return lastNameForIndex(idx)
+	}
+
+	if isFullNameField(name) {
+		return fmt.Sprintf("%s %s", firstNameForIndex(idx), lastNameForIndex(idx))
+	}
+
+	if isGenericNameField(name) {
+		label := nameLabel(name)
+		if label != "" {
+			return fmt.Sprintf("%s %d", label, idx+1)
+		}
+	}
+
+	if isAddressField(name) {
+		return fmt.Sprintf("%d Main St", 100+idx)
+	}
+
+	if isCityField(name) {
+		return fmt.Sprintf("Ciudad %d", idx+1)
+	}
+
+	if isStateField(name) {
+		return fmt.Sprintf("Estado %d", idx+1)
+	}
+
+	if isPostalCodeField(name) {
+		return fmt.Sprintf("%05d", 10000+idx)
+	}
+
+	if isCountryField(name) {
+		return "País"
+	}
+
 	if name == "phone" || name == "phone_number" || name == "phonenumber" {
 		return fmt.Sprintf("+15551234%04d", idx+1)
 	}
@@ -82,6 +121,77 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 	}
 
 	return dummyValue(t, idx, base)
+}
+
+func isFirstNameField(name string) bool {
+	return name == "first_name" || name == "firstname" || name == "given_name"
+}
+
+func isLastNameField(name string) bool {
+	return name == "last_name" || name == "lastname" || name == "surname" || name == "family_name"
+}
+
+func isFullNameField(name string) bool {
+	return name == "full_name" || name == "fullname" || name == "name"
+}
+
+func isGenericNameField(name string) bool {
+	if name == "username" || name == "user_name" {
+		return false
+	}
+	return strings.HasSuffix(name, "_name")
+}
+
+func nameLabel(name string) string {
+	base := strings.TrimSuffix(name, "_name")
+	base = strings.ReplaceAll(base, "_", " ")
+	if base == "" {
+		return ""
+	}
+	return titleWords(base)
+}
+
+func isAddressField(name string) bool {
+	switch name {
+	case "address", "address_line", "address_line1", "address_line2", "street", "street_address", "direccion":
+		return true
+	default:
+		return strings.HasSuffix(name, "_address")
+	}
+}
+
+func isCityField(name string) bool {
+	return name == "city" || name == "town"
+}
+
+func isStateField(name string) bool {
+	return name == "state" || name == "province" || name == "region"
+}
+
+func isPostalCodeField(name string) bool {
+	return name == "zip" || name == "zipcode" || name == "postal_code" || name == "postcode"
+}
+
+func isCountryField(name string) bool {
+	return name == "country" || name == "country_code"
+}
+
+func titleWords(value string) string {
+	parts := strings.Fields(value)
+	for i, part := range parts {
+		parts[i] = strings.ToUpper(part[:1]) + part[1:]
+	}
+	return strings.Join(parts, " ")
+}
+
+func firstNameForIndex(idx int) string {
+	firstNames := []string{"Ana", "Luis", "Marta", "Carlos", "Sofía", "Diego", "Valeria", "Jorge", "Lucía", "Pedro"}
+	return firstNames[idx%len(firstNames)]
+}
+
+func lastNameForIndex(idx int) string {
+	lastNames := []string{"García", "Pérez", "Rodríguez", "López", "Martínez", "Gómez", "Hernández", "Díaz", "Moreno", "Vargas"}
+	return lastNames[idx%len(lastNames)]
 }
 
 // GenerateSeedTemplates writes JSON seed files with dummy data for the provided
