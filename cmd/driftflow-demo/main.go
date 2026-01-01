@@ -7,6 +7,7 @@ import (
 	driftcli "github.com/misaelcrespo30/DriftFlow/cli"
 	"github.com/misaelcrespo30/DriftFlow/config"
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/models"
+	_ "github.com/misaelcrespo30/DriftFlow/internal/database/seed"
 	"github.com/misaelcrespo30/DriftFlow/state"
 	"github.com/spf13/cobra"
 )
