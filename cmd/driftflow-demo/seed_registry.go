@@ -8,6 +8,8 @@ import (
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/seed"
 )
 
-func registerSeeders() {
-	driftflow.SetSeederRegistry(seed.RegisterSeeders)
+func init() {
+	registerSeeders = func() {
+		driftflow.SetSeederRegistry(seed.RegisterSeeders)
+	}
 }
