@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	driftflow "github.com/misaelcrespo30/DriftFlow"
+	"os"
+
 	"github.com/misaelcrespo30/DriftFlow/cli"
 	driftcli "github.com/misaelcrespo30/DriftFlow/cli"
 	"github.com/misaelcrespo30/DriftFlow/config"
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/models"
-	"github.com/misaelcrespo30/DriftFlow/internal/demo/seed"
 	"github.com/misaelcrespo30/DriftFlow/state"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func main() {
@@ -18,7 +17,6 @@ func main() {
 	cfg := config.Load()
 	rootCmd := &cobra.Command{Use: "driftflow"}
 	state.SetModels(models.Models())
-	driftflow.SetSeederRegistry(seed.RegisterSeeders)
 	rootCmd.AddCommand(driftcli.Commands(cfg)...) //se agrega lo necesario
 
 	if err := cli.Execute(); err != nil {
