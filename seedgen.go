@@ -263,6 +263,10 @@ func buildRegisterSource(seeders []string) []byte {
 	}
 	fmt.Fprintf(&buf, "\t}\n")
 	fmt.Fprintf(&buf, "}\n")
+	fmt.Fprintf(&buf, "\n")
+	fmt.Fprintf(&buf, "func init() {\n")
+	fmt.Fprintf(&buf, "\tdriftflow.SetSeederRegistry(RegisterSeeders)\n")
+	fmt.Fprintf(&buf, "}\n")
 	return buf.Bytes()
 }
 
