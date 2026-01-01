@@ -47,6 +47,43 @@ func dummyValue(t reflect.Type, idx int, base time.Time) interface{} {
 	}
 }
 
+func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) interface{} {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	name = strings.ToLower(name)
+
+	if name == "email" {
+		return fmt.Sprintf("user%d@example.com", idx+1)
+	}
+
+	if name == "username" || name == "user_name" {
+		return fmt.Sprintf("user%d", idx+1)
+	}
+
+	if name == "phone" || name == "phone_number" || name == "phonenumber" {
+		return fmt.Sprintf("+15551234%04d", idx+1)
+	}
+
+	if name == "security_stamp" || name == "securitystamp" {
+		return uuid.NewString()
+	}
+
+	if strings.HasSuffix(name, "_id") || name == "id" {
+		if t.Kind() == reflect.String {
+			return uuid.NewString()
+		}
+		switch t.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return int64(idx + 1)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return uint64(idx + 1)
+		}
+	}
+
+	return dummyValue(t, idx, base)
+}
+
 // GenerateSeedTemplates writes JSON seed files with dummy data for the provided
 // models into dir. Each file contains an array of 10 objects and will be
 // overwritten if it already exists.
@@ -171,7 +208,7 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 					obj.set(name, id)
 					continue
 				}
-				obj.set(name, dummyValue(f.Type, i, base))
+				obj.set(name, dummyValueForField(name, f.Type, i, base))
 			}
 			objs[i] = obj
 		}
