@@ -3,7 +3,6 @@ package driftflow
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"

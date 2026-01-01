@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	driftflow "github.com/misaelcrespo30/DriftFlow"
+	"github.com/misaelcrespo30/DriftFlow/internal/database/seed"
 	"os"
 
 	driftcli "github.com/misaelcrespo30/DriftFlow/cli"
@@ -21,6 +23,8 @@ func main() {
 
 	// ✅ Modelos fake para probar generate/migrate/etc
 	state.SetModels(models.Models())
+
+	driftflow.SetSeederRegistry(seed.RegisterSeeders)
 
 	registerSeeders()
 

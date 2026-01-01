@@ -18,7 +18,7 @@ CREATE TABLE "Tenants" (
   "subscription_id" text,
   "subscription_item_id" text,
   "misael" varchar(50) not null default 'standard',
-  "crespo" varchar(100) unique,
+  "padron" varchar(100) unique,
   FOREIGN KEY ("plan_id") REFERENCES "plans"("plan_id")
 );
 

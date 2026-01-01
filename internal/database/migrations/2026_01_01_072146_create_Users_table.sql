@@ -11,7 +11,6 @@ CREATE TABLE "Users" (
   "phone" text,
   "is_phone_confirmed" boolean not null default false,
   "security_stamp" text,
-  "apellido" varchar(100) unique,
   "misael" varchar(100) unique
 );
 

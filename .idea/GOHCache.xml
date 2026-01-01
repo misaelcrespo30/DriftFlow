@@ -224,7 +224,7 @@
         <entry key="file://$PROJECT_DIR$/cmd/driftflow-demo/main.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767157389769" />
+              <option name="lastModified" value="1767274541347" />
             </ScannedPath>
           </value>
         </entry>
@@ -433,7 +433,7 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767109831634" />
+              <option name="lastModified" value="1767252035596" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
