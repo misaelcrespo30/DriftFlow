@@ -8,7 +8,6 @@ import (
 	driftcli "github.com/misaelcrespo30/DriftFlow/cli"
 	"github.com/misaelcrespo30/DriftFlow/config"
 	"github.com/misaelcrespo30/DriftFlow/internal/demo/models"
-	"github.com/misaelcrespo30/DriftFlow/internal/demo/seed"
 	"github.com/misaelcrespo30/DriftFlow/state"
 	"github.com/spf13/cobra"
 )
@@ -22,8 +21,7 @@ func main() {
 	// ✅ Modelos fake para probar generate/migrate/etc
 	state.SetModels(models.Models())
 
-	// ✅ Seeds fake (opcional)
-	driftflow.SetSeederRegistry(seed.RegisterSeeders)
+	registerSeeders()
 
 	root.AddCommand(driftcli.Commands(cfg)...)
 
