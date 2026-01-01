@@ -327,16 +327,16 @@ func Up(db *gorm.DB, dir string) error {
 
 		// ya aplicada?
 		var m SchemaMigration
-		err = db.Where("version = ?", version).First(&m).Error
-		if err == nil {
+		result := db.Where("version = ?", version).Limit(1).Find(&m)
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected > 0 {
 			// ✅ si ya existe, valida checksum (opcional pero recomendado)
 			if m.Checksum != checksum {
 				return fmt.Errorf("migration modified after applied: %s", version)
 			}
 			continue
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
 		}
 
 		// ✅ aplicar en transacción
