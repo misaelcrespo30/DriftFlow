@@ -1,6 +1,7 @@
 package driftflow
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -63,7 +64,10 @@ func GenerateSeedAssets(models []interface{}, dir string) error {
 	if err := generateSeedTemplates(models, dataDir, nil); err != nil {
 		return err
 	}
-	return generateSeedScaffold(models, seedDir)
+	if err := generateSeedScaffold(models, seedDir); err != nil {
+		return err
+	}
+	return generateSeedRegistryHooks()
 }
 
 // GenerateSeedTemplatesWithData is like GenerateSeedTemplates but allows providing
@@ -315,6 +319,60 @@ func buildSeedModelInfo(models []interface{}) []seedModelInfo {
 		infos = append(infos, info)
 	}
 	return infos
+}
+
+func generateSeedRegistryHooks() error {
+	modulePath, err := readModulePath("go.mod")
+	if err != nil {
+		return err
+	}
+	if modulePath == "" {
+		return nil
+	}
+	seedImport := modulePath + "/internal/database/seed"
+
+	hookTargets := []string{
+		filepath.Join("cmd", "driftflow-demo"),
+		filepath.Join("cmd", "driftflow"),
+	}
+
+	for _, dir := range hookTargets {
+		mainPath := filepath.Join(dir, "main.go")
+		if _, err := os.Stat(mainPath); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err
+		}
+		content := fmt.Sprintf("package main\n\nimport _ %q\n", seedImport)
+		if err := os.WriteFile(filepath.Join(dir, "seed_registry.go"), []byte(content), 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func readModulePath(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "module ")), nil
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return "", nil
 }
 
 func primaryIDValue(primaryIDs map[reflect.Type][]string, infoByType map[reflect.Type]seedModelInfo, modelType reflect.Type, jsonName string, idx int) (string, bool) {
