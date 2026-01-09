@@ -213,6 +213,7 @@ func newGenerateCommand() *cobra.Command {
 			opts := driftflow.GenerateOptions{
 				Dir:          migDir,
 				ManifestMode: driftflow.ManifestStrict, // default
+				Engine:       driver,
 			}
 
 			if repair {

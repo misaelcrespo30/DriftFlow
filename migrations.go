@@ -157,6 +157,9 @@ func sqlTypeOf(t reflect.Type) string {
 	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
+	if t.Kind() == reflect.Struct && t.PkgPath() == "gorm.io/gorm" && t.Name() == "DeletedAt" {
+		return "timestamp"
+	}
 	if t.PkgPath() == "time" && t.Name() == "Time" {
 		return "timestamp"
 	}
@@ -186,8 +189,9 @@ func sqlTypeOf(t reflect.Type) string {
 
 // columnDef returns the basic type for diffing and the full column definition
 // string including common GORM decorators like primaryKey or autoIncrement.
-func columnDef(f reflect.StructField) (string, string) {
+func columnDef(f reflect.StructField, engine string, hasSoftDelete bool) (string, string) {
 	tag := f.Tag.Get("gorm")
+	isDeletedAt := isGormDeletedAtType(f.Type)
 	typ := getTagValue(tag, "type")
 	size := getTagValue(tag, "size")
 	if typ == "" {
@@ -195,6 +199,11 @@ func columnDef(f reflect.StructField) (string, string) {
 			typ = fmt.Sprintf("varchar(%s)", size)
 		} else {
 			typ = sqlTypeOf(f.Type)
+		}
+	}
+	if isDeletedAt {
+		if typ == "" || !strings.Contains(strings.ToLower(typ), "timestamp") {
+			typ = "timestamp"
 		}
 	}
 	base := typ
@@ -221,7 +230,9 @@ func columnDef(f reflect.StructField) (string, string) {
 		parts = append(parts, "not null")
 	}
 	if strings.Contains(lowTag, "uniqueindex") || strings.Contains(lowTag, "unique") {
-		parts = append(parts, "unique")
+		if normalizeEngine(engine) != "postgres" || !hasSoftDelete {
+			parts = append(parts, "unique")
+		}
 	}
 	if defVal := getTagValue(tag, "default"); defVal != "" {
 		parts = append(parts, "default "+defVal)
@@ -761,25 +772,26 @@ type foreignKeyInfo struct {
 	RefColumn string
 }
 
-func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, map[string]tableInfo, map[string][]foreignKeyInfo, error) {
+func buildModelSchema(models []interface{}, engine string) (schemaInfo, map[string][]string, map[string]tableInfo, map[string][]foreignKeyInfo, map[string][]IndexDefinition, error) {
 	s := make(schemaInfo)
 	orderMap := make(map[string][]string)
 	defMap := make(map[string]tableInfo)
 	fkMap := make(map[string][]foreignKeyInfo)
+	idxMap := make(map[string][]IndexDefinition)
 
 	var (
 		collectFields func(reflect.Type, tableInfo, tableInfo, *[]string, string)
 		hasGormModel  bool
+		hasSoftDelete bool
+		deletedAtCol  string
+		indexPlans    map[string]*indexPlan
+		orderCounter  int
 	)
 
 	// Helpers
 	isTimeType := func(t reflect.Type) bool {
 		// Covers time.Time and also types named "Time" in package "time"
 		return t.Kind() == reflect.Struct && t.PkgPath() == "time" && t.Name() == "Time"
-	}
-
-	isGormDeletedAt := func(t reflect.Type) bool {
-		return t.Kind() == reflect.Struct && t.PkgPath() == "gorm.io/gorm" && t.Name() == "DeletedAt"
 	}
 
 	// Determines whether a struct/slice field should be treated as a relationship (not a column)
@@ -923,7 +935,7 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 			// Also skip special struct fields like time.Time and gorm.DeletedAt as columns (they are columns, not relations)
 			if (ft.Kind() == reflect.Struct || ft.Kind() == reflect.Slice) &&
 				!isTimeType(ft) &&
-				!isGormDeletedAt(ft) &&
+				!isGormDeletedAtType(ft) &&
 				isRelationField(f, ft) {
 
 				// Only struct relations can define FK directives in this style
@@ -961,9 +973,17 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 
 			*order = append(*order, name)
 
-			base, full := columnDef(f)
+			base, full := columnDef(f, engine, hasSoftDelete)
 			cols[name] = base
 			defs[name] = full
+
+			for _, tag := range parseIndexTags(gtag) {
+				if tag.Kind == indexKindUniqueConstraint && !(normalizeEngine(engine) == "postgres" && hasSoftDelete) {
+					continue
+				}
+				addIndexPlan(indexPlans, tag, name, orderCounter)
+				orderCounter++
+			}
 		}
 	}
 
@@ -977,9 +997,12 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 		}
 
 		table := gormTableName(t)
+		hasSoftDelete, deletedAtCol = modelDeletedAtInfo(t)
 		cols := make(tableInfo)
 		defs := make(tableInfo)
 		var order []string
+		indexPlans = make(map[string]*indexPlan)
+		orderCounter = 0
 
 		hasGormModel = false
 		collectFields(t, cols, defs, &order, table)
@@ -1008,32 +1031,19 @@ func buildModelSchema(models []interface{}) (schemaInfo, map[string][]string, ma
 			s[table] = cols
 			orderMap[table] = order
 			defMap[table] = defs
+			idxMap[table] = buildIndexDefinitions(table, indexPlans, deletedAtCol, engine, hasSoftDelete)
 		}
 	}
 
-	return s, orderMap, defMap, fkMap, nil
+	return s, orderMap, defMap, fkMap, idxMap, nil
 }
 
-func createTableSQL(table string, cols tableInfo, order []string, fks []foreignKeyInfo) string {
+func createTableSQL(table string, cols tableInfo, order []string, fks []foreignKeyInfo, engine string) string {
 	var defs []string
-
-	// Quote identifiers based on DB engine
-	quote := func(ident string) string {
-		dbType := strings.ToLower(strings.TrimSpace(os.Getenv("DB_TYPE")))
-		switch dbType {
-		case "sqlserver", "mssql":
-			return "[" + ident + "]"
-		case "mysql":
-			return "`" + ident + "`"
-		default:
-			// postgres, sqlite, etc.
-			return `"` + ident + `"`
-		}
-	}
 
 	// Build column defs
 	addCol := func(col string, typ string) {
-		defs = append(defs, fmt.Sprintf("%s %s", quote(col), typ))
+		defs = append(defs, fmt.Sprintf("%s %s", quoteIdent(engine, col), typ))
 	}
 
 	if len(order) == 0 {
@@ -1062,13 +1072,13 @@ func createTableSQL(table string, cols tableInfo, order []string, fks []foreignK
 	for _, fk := range fks {
 		defs = append(defs, fmt.Sprintf(
 			"FOREIGN KEY (%s) REFERENCES %s(%s)",
-			quote(fk.Column),
-			quote(fk.RefTable),
-			quote(fk.RefColumn),
+			quoteIdent(engine, fk.Column),
+			quoteIdent(engine, fk.RefTable),
+			quoteIdent(engine, fk.RefColumn),
 		))
 	}
 
-	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", quote(table), strings.Join(defs, ",\n  "))
+	return fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", quoteIdent(engine, table), strings.Join(defs, ",\n  "))
 }
 
 func fileContent(path string) (string, error) {
