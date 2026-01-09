@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,8 +54,20 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 	}
 	name = strings.ToLower(name)
 
+	if isDBTypeField(name) {
+		return dbTypeForIndex(idx)
+	}
+
 	if name == "connection_string" {
-		return fmt.Sprintf("postgres://user%d:pass@localhost:5432/db%d", idx+1, idx+1)
+		return connectionStringForType(dbTypeForIndex(idx), idx)
+	}
+
+	if isServicePlanField(name) {
+		return servicePlanForIndex(idx)
+	}
+
+	if isVersionField(name) {
+		return versionForIndex(idx)
 	}
 
 	if name == "email" {
@@ -125,6 +138,25 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 	}
 
 	return dummyValue(t, idx, base)
+}
+
+func uniqueValueForField(name string, t reflect.Type, idx int, base time.Time) interface{} {
+	value := dummyValueForField(name, t, idx, base)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.String {
+		strValue, ok := value.(string)
+		if !ok {
+			return value
+		}
+		suffix := strconv.Itoa(idx + 1)
+		if strings.Contains(strValue, suffix) {
+			return strValue
+		}
+		return fmt.Sprintf("%s %s", strValue, suffix)
+	}
+	return value
 }
 
 func hasPasswordHashField(t reflect.Type) bool {
@@ -280,6 +312,7 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 	infoByType := make(map[reflect.Type]seedModelInfo, len(modelInfos))
 	primaryIDs := make(map[reflect.Type][]string)
 	primaryByJSON := make(map[string]seedModelInfo)
+	uniqueFields := buildSeedUniqueFields(models)
 	for _, info := range modelInfos {
 		infoByType[info.modelType] = info
 		if info.primaryJSON != "" && info.primaryIsText {
@@ -306,8 +339,13 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 
 		objs := make([]*orderedMap, seedTemplateCount)
 		hasPassword := hasPasswordHashField(t)
+		hasDBType := modelHasFieldName(t, "dbtype", "db_type", "database_type", "engine", "db_engine")
 		for i := 0; i < seedTemplateCount; i++ {
 			obj := newOrderedMap()
+			dbType := ""
+			if hasDBType {
+				dbType = dbTypeForIndex(i)
+			}
 			for j := 0; j < t.NumField(); j++ {
 				f := t.Field(j)
 				if !f.IsExported() {
@@ -340,6 +378,18 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 				}
 				if id, ok := foreignIDValue(primaryIDs, primaryByJSON, t, name, i); ok {
 					obj.set(name, id)
+					continue
+				}
+				if isDBTypeField(name) && dbType != "" {
+					obj.set(name, dbType)
+					continue
+				}
+				if name == "connection_string" && dbType != "" {
+					obj.set(name, connectionStringForType(dbType, i))
+					continue
+				}
+				if uniqueFields != nil && uniqueFields[t][name] {
+					obj.set(name, uniqueValueForField(name, f.Type, i, base))
 					continue
 				}
 				obj.set(name, dummyValueForField(name, f.Type, i, base))
@@ -390,7 +440,8 @@ func generateSeedScaffold(models []interface{}, seedDir string) error {
 		}
 		written[fileName] = struct{}{}
 
-		source := buildSeederSource(pkgPath, t.Name(), seederName, hasPasswordHashField(t))
+		connField, connPointer := connectionStringField(t)
+		source := buildSeederSource(pkgPath, t.Name(), seederName, hasPasswordHashField(t), connField, connPointer)
 		formatted, err := format.Source(source)
 		if err != nil {
 			return err
@@ -409,13 +460,16 @@ func generateSeedScaffold(models []interface{}, seedDir string) error {
 	return os.WriteFile(filepath.Join(seedDir, "register.go"), formatted, 0o644)
 }
 
-func buildSeederSource(pkgPath, modelName, seederName string, hashPasswords bool) []byte {
+func buildSeederSource(pkgPath, modelName, seederName string, hashPasswords bool, connectionField string, connectionPointer bool) []byte {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "package seed\n\n")
 	fmt.Fprintf(&buf, "import (\n")
 	fmt.Fprintf(&buf, "\t\"encoding/json\"\n")
 	if hashPasswords {
 		fmt.Fprintf(&buf, "\t\"fmt\"\n")
+	}
+	if connectionField != "" {
+		fmt.Fprintf(&buf, "\t\"github.com/misaelcrespo30/DriftFlow/helpers\"\n")
 	}
 	fmt.Fprintf(&buf, "\t\"os\"\n\n")
 	fmt.Fprintf(&buf, "\tmodels \"%s\"\n", pkgPath)
@@ -445,6 +499,25 @@ func buildSeederSource(pkgPath, modelName, seederName string, hashPasswords bool
 		fmt.Fprintf(&buf, "\t\t\treturn fmt.Errorf(\"hashing password for %s %%s: %%w\", row.Email, err)\n", strings.ToLower(modelName))
 		fmt.Fprintf(&buf, "\t\t}\n")
 		fmt.Fprintf(&buf, "\t\trow.%s.PasswordHash = string(hashedPassword)\n", modelName)
+		if connectionField != "" {
+			if connectionPointer {
+				fmt.Fprintf(&buf, "\t\tif row.%s != nil {\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tencrypted, err := helpers.Encrypt(*row.%s)\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tif err != nil {\n")
+				fmt.Fprintf(&buf, "\t\t\t\treturn err\n")
+				fmt.Fprintf(&buf, "\t\t\t}\n")
+				fmt.Fprintf(&buf, "\t\t\trow.%s = &encrypted\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t}\n")
+			} else {
+				fmt.Fprintf(&buf, "\t\tif row.%s != \"\" {\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tencrypted, err := helpers.Encrypt(row.%s)\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tif err != nil {\n")
+				fmt.Fprintf(&buf, "\t\t\t\treturn err\n")
+				fmt.Fprintf(&buf, "\t\t\t}\n")
+				fmt.Fprintf(&buf, "\t\t\trow.%s = encrypted\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t}\n")
+			}
+		}
 		fmt.Fprintf(&buf, "\t\titems = append(items, row.%s)\n", modelName)
 		fmt.Fprintf(&buf, "\t}\n\n")
 		fmt.Fprintf(&buf, "\treturn db.Create(&items).Error\n")
@@ -452,6 +525,28 @@ func buildSeederSource(pkgPath, modelName, seederName string, hashPasswords bool
 		fmt.Fprintf(&buf, "\tvar rows []models.%s\n", modelName)
 		fmt.Fprintf(&buf, "\tif err := json.Unmarshal(data, &rows); err != nil {\n\t\treturn err\n\t}\n")
 		fmt.Fprintf(&buf, "\tif len(rows) == 0 {\n\t\treturn nil\n\t}\n\n")
+		if connectionField != "" {
+			fmt.Fprintf(&buf, "\tfor i := range rows {\n")
+			fmt.Fprintf(&buf, "\t\trow := &rows[i]\n")
+			if connectionPointer {
+				fmt.Fprintf(&buf, "\t\tif row.%s != nil {\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tencrypted, err := helpers.Encrypt(*row.%s)\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tif err != nil {\n")
+				fmt.Fprintf(&buf, "\t\t\t\treturn err\n")
+				fmt.Fprintf(&buf, "\t\t\t}\n")
+				fmt.Fprintf(&buf, "\t\t\trow.%s = &encrypted\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t}\n")
+			} else {
+				fmt.Fprintf(&buf, "\t\tif row.%s != \"\" {\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tencrypted, err := helpers.Encrypt(row.%s)\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t\tif err != nil {\n")
+				fmt.Fprintf(&buf, "\t\t\t\treturn err\n")
+				fmt.Fprintf(&buf, "\t\t\t}\n")
+				fmt.Fprintf(&buf, "\t\t\trow.%s = encrypted\n", connectionField)
+				fmt.Fprintf(&buf, "\t\t}\n")
+			}
+			fmt.Fprintf(&buf, "\t}\n\n")
+		}
 		fmt.Fprintf(&buf, "\treturn db.Create(&rows).Error\n")
 	}
 	fmt.Fprintf(&buf, "}\n")
@@ -521,6 +616,175 @@ func buildSeedModelInfo(models []interface{}) []seedModelInfo {
 		infos = append(infos, info)
 	}
 	return infos
+}
+
+func isDBTypeField(name string) bool {
+	switch name {
+	case "dbtype", "db_type", "database_type", "engine", "db_engine":
+		return true
+	default:
+		return false
+	}
+}
+
+func dbTypeForIndex(idx int) string {
+	types := []string{"postgres", "mssql", "mysql", "mongodb"}
+	return types[idx%len(types)]
+}
+
+func connectionStringForType(dbType string, idx int) string {
+	switch strings.ToLower(dbType) {
+	case "mssql", "sqlserver":
+		return fmt.Sprintf("sqlserver://user%d:pass@localhost:1433?database=db%d", idx+1, idx+1)
+	case "mysql":
+		return fmt.Sprintf("mysql://user%d:pass@tcp(localhost:3306)/db%d", idx+1, idx+1)
+	case "mongodb":
+		return fmt.Sprintf("mongodb://user%d:pass@localhost:27017/db%d", idx+1, idx+1)
+	default:
+		return fmt.Sprintf("postgres://user%d:pass@localhost:5432/db%d", idx+1, idx+1)
+	}
+}
+
+func isServicePlanField(name string) bool {
+	return name == "service_plan" || name == "serviceplan"
+}
+
+func servicePlanForIndex(idx int) string {
+	plans := []string{"standard", "pro", "enterprise"}
+	return plans[idx%len(plans)]
+}
+
+func isVersionField(name string) bool {
+	return name == "version"
+}
+
+func versionForIndex(idx int) string {
+	versions := []string{"v1", "v2", "v3"}
+	return versions[idx%len(versions)]
+}
+
+func modelHasFieldName(t reflect.Type, names ...string) bool {
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if !f.IsExported() {
+			continue
+		}
+		if f.Anonymous && f.Type.PkgPath() == "gorm.io/gorm" && f.Type.Name() == "Model" {
+			continue
+		}
+		gtag := f.Tag.Get("gorm")
+		if gtag == "-" || strings.Contains(gtag, "->") {
+			continue
+		}
+		tag := f.Tag.Get("json")
+		if strings.Split(tag, ",")[0] == "-" {
+			continue
+		}
+		jsonName := strings.Split(tag, ",")[0]
+		if jsonName == "" {
+			jsonName = strings.ToLower(f.Name)
+		}
+		for _, name := range names {
+			if jsonName == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func connectionStringField(t reflect.Type) (string, bool) {
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if !f.IsExported() {
+			continue
+		}
+		if f.Anonymous && f.Type.PkgPath() == "gorm.io/gorm" && f.Type.Name() == "Model" {
+			continue
+		}
+		gtag := f.Tag.Get("gorm")
+		if gtag == "-" || strings.Contains(gtag, "->") {
+			continue
+		}
+		tag := f.Tag.Get("json")
+		if strings.Split(tag, ",")[0] == "-" {
+			continue
+		}
+		name := strings.Split(tag, ",")[0]
+		if name == "" {
+			name = strings.ToLower(f.Name)
+		}
+		if name != "connection_string" {
+			continue
+		}
+		ft := f.Type
+		if ft.Kind() == reflect.Pointer {
+			if ft.Elem().Kind() == reflect.String {
+				return f.Name, true
+			}
+			continue
+		}
+		if ft.Kind() == reflect.String {
+			return f.Name, false
+		}
+	}
+	return "", false
+}
+
+func buildSeedUniqueFields(models []interface{}) map[reflect.Type]map[string]bool {
+	uniqueFields := make(map[reflect.Type]map[string]bool)
+	for _, m := range models {
+		t := reflect.TypeOf(m)
+		if t == nil {
+			continue
+		}
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() != reflect.Struct {
+			continue
+		}
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+			if f.Anonymous && f.Type.PkgPath() == "gorm.io/gorm" && f.Type.Name() == "Model" {
+				continue
+			}
+			gtag := f.Tag.Get("gorm")
+			if gtag == "-" || strings.Contains(gtag, "->") {
+				continue
+			}
+			tags := parseIndexTags(gtag)
+			if len(tags) == 0 {
+				continue
+			}
+			isUnique := false
+			for _, tag := range tags {
+				if tag.Unique {
+					isUnique = true
+					break
+				}
+			}
+			if !isUnique {
+				continue
+			}
+			tag := f.Tag.Get("json")
+			if strings.Split(tag, ",")[0] == "-" {
+				continue
+			}
+			name := strings.Split(tag, ",")[0]
+			if name == "" {
+				name = strings.ToLower(f.Name)
+			}
+			if uniqueFields[t] == nil {
+				uniqueFields[t] = make(map[string]bool)
+			}
+			uniqueFields[t][name] = true
+		}
+	}
+	return uniqueFields
 }
 
 func generateSeedRegistryHooks() error {
