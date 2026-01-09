@@ -21,6 +21,7 @@ type SnapshotTable struct {
 	Columns     map[string]string `json:"columns"`      // col -> full sql def (NOT NULL, default, etc.)
 	Order       []string          `json:"order"`        // stable order
 	ForeignKeys []foreignKeyInfo  `json:"foreign_keys"` // optional, por ahora solo para create
+	Indexes     []IndexDefinition `json:"indexes,omitempty"`
 }
 
 // --------------------
@@ -42,6 +43,7 @@ type GenerateOptions struct {
 	Dir                string
 	ManifestMode       ManifestMode
 	RepairAddUntracked bool // en repair: agrega *.sql fuera del manifest
+	Engine             string
 }
 
 type ManifestLock struct {
@@ -380,8 +382,14 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 		snap.Tables = map[string]SnapshotTable{}
 	}
 
+	engine := normalizeEngine(opts.Engine)
+	engineForSQL := engine
+	if engineForSQL == "" {
+		engineForSQL = normalizeEngine(os.Getenv("DB_TYPE"))
+	}
+
 	// 3) Build schema from models
-	schemaMap, orderMap, defMap, fkMap, err := buildModelSchema(models)
+	schemaMap, orderMap, defMap, fkMap, idxMap, err := buildModelSchema(models, engine)
 	if err != nil {
 		return err
 	}
@@ -398,6 +406,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 		modelCols := defMap[table] // col -> full definition
 		modelOrder := orderMap[table]
 		modelFKs := fkMap[table]
+		modelIndexes := idxMap[table]
 
 		prev, exists := snap.Tables[table]
 		if !exists {
@@ -405,8 +414,9 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 			name := fmt.Sprintf("%s_create_%s_table", ts(now, seq), table)
 			seq++
 
-			up := createTableSQL(table, modelCols, modelOrder, modelFKs)
-			down := fmt.Sprintf("DROP TABLE %s;", table)
+			up := createTableSQL(table, modelCols, modelOrder, modelFKs, engineForSQL)
+			up = appendIndexSQL(up, table, modelIndexes, engineForSQL)
+			down := fmt.Sprintf("DROP TABLE %s;", quoteIdent(engineForSQL, table))
 
 			if err := writeMigrationFile(dir, name, up, down); err != nil {
 				return err
@@ -420,6 +430,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 				Columns:     copyMap(modelCols),
 				Order:       append([]string{}, modelOrder...),
 				ForeignKeys: append([]foreignKeyInfo{}, modelFKs...),
+				Indexes:     cloneIndexes(modelIndexes),
 			}
 
 			changed = true
@@ -427,7 +438,8 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 		}
 
 		added, removed, altered := diffSnapshot(prev.Columns, modelCols)
-		if len(added) == 0 && len(removed) == 0 && len(altered) == 0 {
+		idxAdded, idxRemoved := diffIndexes(prev.Indexes, modelIndexes)
+		if len(added) == 0 && len(removed) == 0 && len(altered) == 0 && len(idxAdded) == 0 && len(idxRemoved) == 0 {
 			continue
 		}
 
@@ -435,7 +447,8 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 		name := fmt.Sprintf("%s_alter_%s_table", ts(now, seq), table)
 		seq++
 
-		up, down := buildAlterSQL(table, prev.Columns, modelCols, modelOrder, added, removed, altered)
+		up, down := buildAlterSQL(quoteIdent(engineForSQL, table), prev.Columns, modelCols, modelOrder, added, removed, altered)
+		up, down = appendIndexChanges(up, down, table, idxAdded, idxRemoved, engineForSQL)
 		if strings.TrimSpace(up) == "" {
 			continue
 		}
@@ -452,6 +465,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 		prev.Columns = copyMap(modelCols)
 		prev.Order = append([]string{}, modelOrder...)
 		prev.ForeignKeys = append([]foreignKeyInfo{}, modelFKs...)
+		prev.Indexes = cloneIndexes(modelIndexes)
 		snap.Tables[table] = prev
 
 		changed = true
