@@ -97,7 +97,7 @@ func parseIndexTags(tag string) []indexTag {
 		case lower == "unique":
 			tags = append(tags, indexTag{Unique: true, Kind: indexKindUniqueConstraint})
 		case strings.HasPrefix(lower, "uniqueindex"):
-			name, priority, unique := parseIndexClause(part)
+			name, priority, _ := parseIndexClause(part)
 			tags = append(tags, indexTag{Name: name, Priority: priority, Unique: true, Kind: indexKindUniqueIndex})
 		case strings.HasPrefix(lower, "index"):
 			name, priority, unique := parseIndexClause(part)
