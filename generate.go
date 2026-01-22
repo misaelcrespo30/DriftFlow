@@ -389,7 +389,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 	}
 
 	// 3) Build schema from models
-	schemaMap, orderMap, defMap, fkMap, idxMap, err := buildModelSchema(models, engine)
+	schemaMap, orderMap, defMap, fkMap, idxMap, err := buildModelSchema(models, engineForSQL)
 	if err != nil {
 		return err
 	}
