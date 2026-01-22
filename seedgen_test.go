@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type tmplModel struct {
@@ -97,3 +100,64 @@ func TestGenerateSeedTemplatesOverwriteExisting(t *testing.T) {
 		t.Fatalf("expected 10 items, got %d", len(got))
 	}
 }
+
+func TestRuleKeyFieldAvoidsUUID(t *testing.T) {
+	value := dummyValueForField("service_key", reflect.TypeOf(""), 0, time.Now())
+	strValue, ok := value.(string)
+	if !ok {
+		t.Fatalf("expected string, got %T", value)
+	}
+	if _, err := uuid.Parse(strValue); err == nil {
+		t.Fatalf("expected non-uuid value, got %s", strValue)
+	}
+}
+
+func TestRuleDomainFieldUsesKnownDomains(t *testing.T) {
+	value := dummyValueForField("custom_domain", reflect.TypeOf(""), 1, time.Now())
+	strValue, ok := value.(string)
+	if !ok {
+		t.Fatalf("expected string, got %T", value)
+	}
+	allowed := allowedRootDomains()
+	found := false
+	for _, domain := range allowed {
+		if strValue == domain {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected domain in %v, got %s", allowed, strValue)
+	}
+}
+
+func TestRuleAllowedRedirectURIsJSON(t *testing.T) {
+	value := dummyValueForField("allowed_redirect_uris", reflect.TypeOf(JSON{}), 0, time.Now())
+	raw, ok := value.(json.RawMessage)
+	if !ok {
+		t.Fatalf("expected json.RawMessage, got %T", value)
+	}
+	expected, err := json.Marshal(allowedRedirectURIs())
+	if err != nil {
+		t.Fatalf("marshal expected: %v", err)
+	}
+	if string(raw) != string(expected) {
+		t.Fatalf("expected %s, got %s", expected, raw)
+	}
+}
+
+func TestDedupeSeedObjectsByNaturalKey(t *testing.T) {
+	obj1 := newOrderedMap()
+	obj1.set("service_key", "branding")
+	obj2 := newOrderedMap()
+	obj2.set("service_key", "branding")
+	obj3 := newOrderedMap()
+	obj3.set("service_key", "network")
+
+	objs := dedupeSeedObjects([]*orderedMap{obj1, obj2, obj3}, []string{"service_key"})
+	if len(objs) != 2 {
+		t.Fatalf("expected 2 unique objects, got %d", len(objs))
+	}
+}
+
+type JSON []byte
