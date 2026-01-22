@@ -152,6 +152,13 @@ func getTagValue(tag, key string) string {
 	return ""
 }
 
+func isDatatypesJSON(t reflect.Type) bool {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return t.PkgPath() == "gorm.io/datatypes" && (t.Name() == "JSON" || t.Name() == "JSONMap")
+}
+
 // sqlTypeOf provides a simple mapping from Go types to SQL types.
 func sqlTypeOf(t reflect.Type) string {
 	if t.Kind() == reflect.Pointer {
@@ -195,7 +202,13 @@ func columnDef(f reflect.StructField, engine string, hasSoftDelete bool) (string
 	typ := getTagValue(tag, "type")
 	size := getTagValue(tag, "size")
 	if typ == "" {
-		if size != "" && f.Type.Kind() == reflect.String {
+		if isDatatypesJSON(f.Type) {
+			if normalizeEngine(engine) == "postgres" {
+				typ = "jsonb"
+			} else {
+				typ = "json"
+			}
+		} else if size != "" && f.Type.Kind() == reflect.String {
 			typ = fmt.Sprintf("varchar(%s)", size)
 		} else {
 			typ = sqlTypeOf(f.Type)
@@ -812,7 +825,7 @@ func buildModelSchema(models []interface{}, engine string) (schemaInfo, map[stri
 		}
 
 		// Slices are typically has-many relations unless explicitly marked otherwise
-		if ft.Kind() == reflect.Slice {
+		if ft.Kind() == reflect.Slice && !isDatatypesJSON(ft) {
 			return true
 		}
 
