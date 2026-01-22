@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/misaelcrespo30/DriftFlow/config"
@@ -53,6 +54,10 @@ func dummyValueForField(name string, t reflect.Type, idx int, base time.Time) in
 		t = t.Elem()
 	}
 	name = strings.ToLower(name)
+
+	if value, ok := ruleValueForField(name, t, idx); ok {
+		return value
+	}
 
 	if isDBTypeField(name) {
 		return dbTypeForIndex(idx)
@@ -146,6 +151,9 @@ func uniqueValueForField(name string, t reflect.Type, idx int, base time.Time) i
 		t = t.Elem()
 	}
 	if t.Kind() == reflect.String {
+		if isKeyField(name) {
+			return value
+		}
 		strValue, ok := value.(string)
 		if !ok {
 			return value
@@ -249,6 +257,149 @@ func lastNameForIndex(idx int) string {
 	return lastNames[idx%len(lastNames)]
 }
 
+func ruleValueForField(name string, t reflect.Type, idx int) (interface{}, bool) {
+	normalized := normalizedFieldName(name)
+
+	if normalized == "defaultclientid" {
+		return "web", true
+	}
+
+	if normalized == "app" {
+		return appValueForIndex(idx), true
+	}
+
+	if isJSONType(t) {
+		if normalized == "allowedredirecturis" {
+			return jsonValue(allowedRedirectURIs()), true
+		}
+		if normalized == "allowedscopes" {
+			return jsonValue(allowedScopes()), true
+		}
+		if normalized == "allowedrootdomains" {
+			return jsonValue(allowedRootDomains()), true
+		}
+		if normalized == "allowedredirectsubs" || normalized == "allowedredirectsubdomains" {
+			return jsonValue(allowedRedirectSubs()), true
+		}
+		if strings.Contains(normalized, "domain") {
+			return jsonValue(allowedRootDomains()), true
+		}
+	}
+
+	if strings.Contains(normalized, "domain") && t.Kind() == reflect.String {
+		return domainForIndex(idx), true
+	}
+
+	if isKeyField(name) {
+		return keyValueForField(name, idx), true
+	}
+
+	return nil, false
+}
+
+func normalizedFieldName(name string) string {
+	return strings.ReplaceAll(strings.ToLower(name), "_", "")
+}
+
+func jsonValue(value interface{}) json.RawMessage {
+	b, err := json.Marshal(value)
+	if err != nil {
+		return json.RawMessage("null")
+	}
+	return json.RawMessage(b)
+}
+
+func domainForIndex(idx int) string {
+	domains := allowedRootDomains()
+	return domains[idx%len(domains)]
+}
+
+func allowedRootDomains() []string {
+	return []string{"elevitae.com", "mydailychoice.com"}
+}
+
+func allowedRedirectURIs() []string {
+	return []string{
+		"https://web.elevitae.com/auth/callback",
+		"https://web.mydailychoice.com/auth/callback",
+	}
+}
+
+func allowedScopes() []string {
+	return []string{"openid", "email", "profile"}
+}
+
+func allowedRedirectSubs() []string {
+	return []string{"web", "backoffices", "login"}
+}
+
+func appValueForIndex(idx int) string {
+	apps := allowedRedirectSubs()
+	return apps[idx%len(apps)]
+}
+
+func isKeyField(name string) bool {
+	name = strings.ToLower(name)
+	return strings.Contains(name, "key")
+}
+
+func keyValueForField(name string, idx int) string {
+	name = strings.ToLower(name)
+	if name == "service_key" {
+		return keyValueFromCatalog([]string{"branding", "network", "provisioning", "subscription"}, idx)
+	}
+	if name == "plan_key" {
+		return keyValueFromCatalog([]string{"basic", "pro", "enterprise"}, idx)
+	}
+	base := strings.TrimSuffix(name, "_key")
+	if base == name {
+		base = "key"
+	}
+	base = slugify(base)
+	return fmt.Sprintf("%s-%d", base, idx+1)
+}
+
+func keyValueFromCatalog(values []string, idx int) string {
+	if len(values) == 0 {
+		return fmt.Sprintf("key-%d", idx+1)
+	}
+	value := values[idx%len(values)]
+	if idx >= len(values) {
+		return fmt.Sprintf("%s-%d", value, idx+1)
+	}
+	return value
+}
+
+func slugify(value string) string {
+	value = strings.ToLower(value)
+	var buf strings.Builder
+	lastDash := false
+	for _, r := range value {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			buf.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if lastDash {
+			continue
+		}
+		buf.WriteByte('-')
+		lastDash = true
+	}
+	result := strings.Trim(buf.String(), "-")
+	if result == "" {
+		return "key"
+	}
+	return result
+}
+
+func isJSONType(t reflect.Type) bool {
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8 && t.Name() == "JSON"
+}
+
 // GenerateSeedTemplates writes JSON seed files with dummy data for the provided
 // models into dir. Each file contains an array of 10 objects and will be
 // overwritten if it already exists.
@@ -340,6 +491,7 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 		objs := make([]*orderedMap, seedTemplateCount)
 		hasPassword := hasPasswordHashField(t)
 		hasDBType := modelHasFieldName(t, "dbtype", "db_type", "database_type", "engine", "db_engine")
+		naturalKeyFields := naturalKeyFieldsForModel(t)
 		for i := 0; i < seedTemplateCount; i++ {
 			obj := newOrderedMap()
 			dbType := ""
@@ -399,6 +551,7 @@ func generateSeedTemplates(models []interface{}, dir string, gens map[string]fun
 			}
 			objs[i] = obj
 		}
+		objs = dedupeSeedObjects(objs, naturalKeyFields)
 
 		b, err := json.MarshalIndent(objs, "", "  ")
 		if err != nil {
@@ -616,6 +769,93 @@ func buildSeedModelInfo(models []interface{}) []seedModelInfo {
 		infos = append(infos, info)
 	}
 	return infos
+}
+
+func naturalKeyFieldsForModel(t reflect.Type) []string {
+	var keyField string
+	var emailField string
+	var tenantField string
+	var appField string
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		if !f.IsExported() {
+			continue
+		}
+		if f.Anonymous && f.Type.PkgPath() == "gorm.io/gorm" && f.Type.Name() == "Model" {
+			continue
+		}
+		gtag := f.Tag.Get("gorm")
+		if gtag == "-" || strings.Contains(gtag, "->") {
+			continue
+		}
+		tag := f.Tag.Get("json")
+		if strings.Split(tag, ",")[0] == "-" {
+			continue
+		}
+		name := strings.Split(tag, ",")[0]
+		if name == "" {
+			name = strings.ToLower(f.Name)
+		}
+		lowerName := strings.ToLower(name)
+		if keyField == "" && strings.HasSuffix(lowerName, "_key") {
+			keyField = name
+		}
+		if emailField == "" && lowerName == "email" {
+			emailField = name
+		}
+		if tenantField == "" && normalizedFieldName(lowerName) == "tenantid" {
+			tenantField = name
+		}
+		if appField == "" && normalizedFieldName(lowerName) == "app" {
+			appField = name
+		}
+	}
+	if keyField != "" {
+		return []string{keyField}
+	}
+	if emailField != "" {
+		return []string{emailField}
+	}
+	if tenantField != "" && appField != "" {
+		return []string{tenantField, appField}
+	}
+	return nil
+}
+
+func dedupeSeedObjects(objs []*orderedMap, naturalKeyFields []string) []*orderedMap {
+	if len(naturalKeyFields) == 0 {
+		return objs
+	}
+	seen := make(map[string]struct{}, len(objs))
+	filtered := make([]*orderedMap, 0, len(objs))
+	for _, obj := range objs {
+		key, ok := naturalKeyForObject(obj, naturalKeyFields)
+		if !ok {
+			filtered = append(filtered, obj)
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		filtered = append(filtered, obj)
+	}
+	return filtered
+}
+
+func naturalKeyForObject(obj *orderedMap, fields []string) (string, bool) {
+	if obj == nil {
+		return "", false
+	}
+	parts := make([]string, 0, len(fields))
+	for _, field := range fields {
+		value, ok := obj.values[field]
+		if !ok || value == nil {
+			return "", false
+		}
+		parts = append(parts, fmt.Sprint(value))
+	}
+	return strings.Join(parts, "|"), true
 }
 
 func isDBTypeField(name string) bool {
