@@ -239,10 +239,12 @@ type foreignKeyRow struct {
 	ConstraintName string `gorm:"column:constraint_name"`
 }
 
+type tableNameRow struct {
+	Name string `gorm:"column:table_name"`
+}
+
 func listPostgresTables(db *gorm.DB, schema string) ([]string, error) {
-	rows := []struct {
-		Name string `gorm:"column:table_name"`
-	}{}
+	rows := []tableNameRow{}
 	err := db.Raw(`
 SELECT table_name
 FROM information_schema.tables
@@ -256,9 +258,7 @@ WHERE table_schema = ?
 }
 
 func listMySQLTables(db *gorm.DB, database string) ([]string, error) {
-	rows := []struct {
-		Name string `gorm:"column:table_name"`
-	}{}
+	rows := []tableNameRow{}
 	err := db.Raw(`
 SELECT table_name
 FROM information_schema.tables
@@ -272,9 +272,7 @@ WHERE table_schema = ?
 }
 
 func listMSSQLTables(db *gorm.DB, schema string) ([]string, error) {
-	rows := []struct {
-		Name string `gorm:"column:table_name"`
-	}{}
+	rows := []tableNameRow{}
 	err := db.Raw(`
 SELECT TABLE_NAME AS table_name
 FROM INFORMATION_SCHEMA.TABLES
@@ -304,7 +302,7 @@ WHERE s.name = ?
 	return rows, nil
 }
 
-func extractTableNames(rows []struct{ Name string }) []string {
+func extractTableNames(rows []tableNameRow) []string {
 	names := make([]string, 0, len(rows))
 	for _, row := range rows {
 		if row.Name != "" {
