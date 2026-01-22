@@ -314,6 +314,77 @@ func newResetCommand() *cobra.Command {
 	return cmd
 }
 
+func newCleanCommand() *cobra.Command {
+	var force bool
+	var allowProd bool
+	var schema string
+	var include string
+	var exclude string
+	var keepMigrations bool
+	var dryRun bool
+
+	cmd := &cobra.Command{
+		Use:     "clean",
+		Aliases: []string{"truncate"},
+		Short:   "Delete all data in tables without dropping the schema",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if !allowProd && strings.EqualFold(os.Getenv("ENV"), "production") {
+				return fmt.Errorf("clean blocked in production; use --allow-prod to override")
+			}
+			if !force {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Fprint(cmd.OutOrStdout(), "This will DELETE/TRUNCATE all data in all tables but keep the schema. Type 'yes' to continue: ")
+				input, err := reader.ReadString('\n')
+				if err != nil && err != os.EOF {
+					return err
+				}
+				if strings.TrimSpace(input) != "yes" {
+					return fmt.Errorf("clean aborted")
+				}
+			}
+
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+
+			summary, err := driftflow.Clean(db, driftflow.CleanOptions{
+				DSN:            dsn,
+				Driver:         driver,
+				Schema:         schema,
+				IncludePattern: include,
+				ExcludePattern: exclude,
+				KeepMigrations: keepMigrations,
+				DryRun:         dryRun,
+			})
+			if err != nil {
+				return err
+			}
+
+			if dryRun {
+				for _, stmt := range summary.Statements {
+					fmt.Fprintln(cmd.OutOrStdout(), stmt)
+				}
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Dialect: %s\n", summary.Dialect)
+			fmt.Fprintf(cmd.OutOrStdout(), "Schema: %s\n", summary.Schema)
+			fmt.Fprintf(cmd.OutOrStdout(), "Tables affected: %d\n", summary.TablesAffected)
+			fmt.Fprintf(cmd.OutOrStdout(), "Method: %s\n", summary.Method)
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "skip confirmation prompt")
+	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow clean when ENV=production")
+	cmd.Flags().StringVar(&schema, "schema", "", "database schema to clean")
+	cmd.Flags().StringVar(&include, "include", "", "include only tables matching the pattern")
+	cmd.Flags().StringVar(&exclude, "exclude", "", "exclude tables matching the pattern")
+	cmd.Flags().BoolVar(&keepMigrations, "keep-migrations", true, "keep migration/history tables")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "print statements without executing")
+	return cmd
+}
+
 func newAuditCommand() *cobra.Command {
 	auditCmd := &cobra.Command{
 		Use:   "audit",
@@ -470,6 +541,7 @@ func Commands(cfg *config.Config) []*cobra.Command {
 		newUndoCommand(),
 		newRollbackCommand(),
 		newResetCommand(),
+		newCleanCommand(),
 		newSeedCommand(),
 		newSeedgenCommand(),
 		newGenerateCommand(),
