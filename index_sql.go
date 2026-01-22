@@ -82,6 +82,14 @@ func createIndexSQL(table string, idx IndexDefinition, engine string) string {
 	if idx.Unique {
 		unique = "UNIQUE "
 	}
+	if normalizeEngine(engine) == "postgres" {
+		stmt := fmt.Sprintf("CREATE %sINDEX IF NOT EXISTS %s ON %s (%s)", unique, quoteIdent(engine, idx.Name), quoteIdent(engine, table), strings.Join(cols, ", "))
+		if strings.TrimSpace(idx.Where) != "" {
+			stmt += " WHERE " + idx.Where
+		}
+		return stmt + ";"
+	}
+
 	stmt := fmt.Sprintf("CREATE %sINDEX %s ON %s (%s)", unique, quoteIdent(engine, idx.Name), quoteIdent(engine, table), strings.Join(cols, ", "))
 	if strings.TrimSpace(idx.Where) != "" {
 		stmt += " WHERE " + idx.Where
