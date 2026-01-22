@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -277,7 +278,7 @@ func newResetCommand() *cobra.Command {
 				reader := bufio.NewReader(os.Stdin)
 				fmt.Fprint(cmd.OutOrStdout(), "This will DROP ALL TABLES in the target database. Type 'yes' to continue: ")
 				input, err := reader.ReadString('\n')
-				if err != nil && err != os.EOF {
+				if err != nil && err != io.EOF {
 					return err
 				}
 				if strings.TrimSpace(input) != "yes" {
@@ -335,7 +336,7 @@ func newCleanCommand() *cobra.Command {
 				reader := bufio.NewReader(os.Stdin)
 				fmt.Fprint(cmd.OutOrStdout(), "This will DELETE/TRUNCATE all data in all tables but keep the schema. Type 'yes' to continue: ")
 				input, err := reader.ReadString('\n')
-				if err != nil && err != os.EOF {
+				if err != nil && err != io.EOF {
 					return err
 				}
 				if strings.TrimSpace(input) != "yes" {
