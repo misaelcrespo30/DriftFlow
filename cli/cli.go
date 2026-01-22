@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -259,6 +260,60 @@ func newValidateCommand() *cobra.Command {
 	}
 }
 
+func newResetCommand() *cobra.Command {
+	var force bool
+	var allowProd bool
+	var schema string
+	var database string
+
+	cmd := &cobra.Command{
+		Use:   "reset",
+		Short: "Drop all tables in the target database",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if !allowProd && strings.EqualFold(os.Getenv("ENV"), "production") {
+				return fmt.Errorf("reset blocked in production; use --allow-prod to override")
+			}
+			if !force {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Fprint(cmd.OutOrStdout(), "This will DROP ALL TABLES in the target database. Type 'yes' to continue: ")
+				input, err := reader.ReadString('\n')
+				if err != nil && err != os.EOF {
+					return err
+				}
+				if strings.TrimSpace(input) != "yes" {
+					return fmt.Errorf("reset aborted")
+				}
+			}
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			summary, err := driftflow.Reset(db, driftflow.ResetOptions{
+				DSN:      dsn,
+				Driver:   driver,
+				Schema:   schema,
+				Database: database,
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Dialect: %s\n", summary.Dialect)
+			fmt.Fprintf(cmd.OutOrStdout(), "Database: %s\n", summary.Database)
+			fmt.Fprintf(cmd.OutOrStdout(), "Schema: %s\n", summary.Schema)
+			fmt.Fprintf(cmd.OutOrStdout(), "Tables dropped: %d\n", summary.TablesDropped)
+			fmt.Fprintf(cmd.OutOrStdout(), "Recreated schema: %t\n", summary.RecreatedSchema)
+			fmt.Fprintf(cmd.OutOrStdout(), "Recreated database: %t\n", summary.RecreatedDatabase)
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "skip confirmation prompt")
+	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow reset when ENV=production")
+	cmd.Flags().StringVar(&schema, "schema", "", "database schema to reset")
+	cmd.Flags().StringVar(&database, "database", "", "database name to reset")
+	return cmd
+}
+
 func newAuditCommand() *cobra.Command {
 	auditCmd := &cobra.Command{
 		Use:   "audit",
@@ -414,6 +469,7 @@ func Commands(cfg *config.Config) []*cobra.Command {
 		newDownCommand(),
 		newUndoCommand(),
 		newRollbackCommand(),
+		newResetCommand(),
 		newSeedCommand(),
 		newSeedgenCommand(),
 		newGenerateCommand(),
