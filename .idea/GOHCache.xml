@@ -3,10 +3,24 @@
   <component name="GoORMHelperCache">
     <option name="schemaMapping">
       <map>
-        <entry key="AuthConfigService">
+        <entry key="BackupCode">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/services/auth_config_service.go" />
+              <option value="file://$PROJECT_DIR$/internal/demo/models/backup_code.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="CleanOptions">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/clean.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="CleanSummary">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/clean.go" />
             </set>
           </value>
         </entry>
@@ -73,32 +87,24 @@
             </set>
           </value>
         </entry>
-        <entry key="OIDCCallbackResponse">
-          <value>
-            <set>
-              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/api/controllers/oidc_controller.go" />
-            </set>
-          </value>
-        </entry>
         <entry key="OIDCClient">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/libs/config/oidc_clients.go" />
-              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/oidc_client.go" />
+              <option value="file://$PROJECT_DIR$/internal/demo/models/oidc_client.go" />
             </set>
           </value>
         </entry>
-        <entry key="OIDCClientCache">
+        <entry key="OIDCSettings">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/services/oidc_client_cache.go" />
+              <option value="file://$PROJECT_DIR$/internal/demo/models/oidc_settings.go" />
             </set>
           </value>
         </entry>
-        <entry key="OIDCClientRepository">
+        <entry key="PasswordResetToken">
           <value>
             <set>
-              <option value="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/repository/oidc_client_repository.go" />
+              <option value="file://$PROJECT_DIR$/internal/demo/models/password_reset_token.go" />
             </set>
           </value>
         </entry>
@@ -106,6 +112,20 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/internal/demo/models/plan.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ResetOptions">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/reset.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="ResetSummary">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/reset.go" />
             </set>
           </value>
         </entry>
@@ -130,6 +150,13 @@
             </set>
           </value>
         </entry>
+        <entry key="Service">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/models/services.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="SnapshotTable">
           <value>
             <set>
@@ -141,6 +168,20 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/internal/demo/models/tenant.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TenantDomain">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/models/tenant_domain.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="TenantService">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/internal/demo/models/tenant_service.go" />
             </set>
           </value>
         </entry>
@@ -179,6 +220,13 @@
             </set>
           </value>
         </entry>
+        <entry key="foreignKeyRow">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/reset.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="indexColumn">
           <value>
             <set>
@@ -214,6 +262,13 @@
             </set>
           </value>
         </entry>
+        <entry key="oidcClientJSONB">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/migrations_generate_test.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="orderedMap">
           <value>
             <set>
@@ -225,6 +280,13 @@
           <value>
             <set>
               <option value="file://$PROJECT_DIR$/seedgen.go" />
+            </set>
+          </value>
+        </entry>
+        <entry key="tableNameRow">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/reset.go" />
             </set>
           </value>
         </entry>
@@ -258,24 +320,30 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/clean.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1769104056367" />
+              <option name="schema">
+                <list>
+                  <option value="CleanOptions" />
+                  <option value="CleanSummary" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/cli/cli.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767919347727" />
+              <option name="lastModified" value="1769107919095" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/cmd/driftflow-demo/main.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767286223195" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/cmd/driftflow-demo/seed_registry.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1767285176797" />
+              <option name="lastModified" value="1769107376062" />
             </ScannedPath>
           </value>
         </entry>
@@ -381,7 +449,7 @@
         <entry key="file://$PROJECT_DIR$/generate.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767919347730" />
+              <option name="lastModified" value="1769099507499" />
               <option name="schema">
                 <list>
                   <option value="SchemaSnapshot" />
@@ -462,21 +530,76 @@
         <entry key="file://$PROJECT_DIR$/index_sql.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767919347732" />
+              <option name="lastModified" value="1769058056498" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/database/seed/register.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1769107465207" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/backup_code.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1768189410443" />
+              <option name="schema">
+                <list>
+                  <option value="BackupCode" />
+                </list>
+              </option>
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/internal/demo/models/models.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767131811266" />
+              <option name="lastModified" value="1769031611027" />
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/oidc_client.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1769097263667" />
+              <option name="schema">
+                <list>
+                  <option value="OIDCClient" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/oidc_settings.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1769050417280" />
+              <option name="schema">
+                <list>
+                  <option value="OIDCSettings" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/password_reset_token.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1768189359709" />
+              <option name="schema">
+                <list>
+                  <option value="PasswordResetToken" />
+                </list>
+              </option>
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/internal/demo/models/plan.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767044529285" />
+              <option name="lastModified" value="1768189309242" />
               <option name="schema">
                 <list>
                   <option value="Plan" />
@@ -485,10 +608,22 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/services.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1768189253032" />
+              <option name="schema">
+                <list>
+                  <option value="Service" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/internal/demo/models/tenant.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767285138179" />
+              <option name="lastModified" value="1768252805835" />
               <option name="schema">
                 <list>
                   <option value="Tenant" />
@@ -497,10 +632,34 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/tenant_domain.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1768188923138" />
+              <option name="schema">
+                <list>
+                  <option value="TenantDomain" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/internal/demo/models/tenant_service.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1768189062395" />
+              <option name="schema">
+                <list>
+                  <option value="TenantService" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/internal/demo/models/tenant_user.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767044765009" />
+              <option name="lastModified" value="1768189154389" />
               <option name="schema">
                 <list>
                   <option value="TenantUser" />
@@ -512,7 +671,7 @@
         <entry key="file://$PROJECT_DIR$/internal/demo/models/user.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767208608138" />
+              <option name="lastModified" value="1768971654302" />
               <option name="schema">
                 <list>
                   <option value="User" />
@@ -531,13 +690,25 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767919347734" />
+              <option name="lastModified" value="1769099507500" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
                   <option value="alter" />
                   <option value="change" />
                   <option value="foreignKeyInfo" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
+        <entry key="file://$PROJECT_DIR$/migrations_generate_test.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1769099507501" />
+              <option name="schema">
+                <list>
+                  <option value="oidcClientJSONB" />
                 </list>
               </option>
             </ScannedPath>
@@ -555,6 +726,21 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/reset.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1769106565745" />
+              <option name="schema">
+                <list>
+                  <option value="ResetOptions" />
+                  <option value="ResetSummary" />
+                  <option value="foreignKeyRow" />
+                  <option value="tableNameRow" />
+                </list>
+              </option>
+            </ScannedPath>
+          </value>
+        </entry>
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
@@ -565,7 +751,7 @@
         <entry key="file://$PROJECT_DIR$/seedgen.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767941317792" />
+              <option name="lastModified" value="1769061758232" />
               <option name="schema">
                 <list>
                   <option value="seedModelInfo" />
@@ -577,7 +763,7 @@
         <entry key="file://$PROJECT_DIR$/seedgen_test.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767215469223" />
+              <option name="lastModified" value="1769061758233" />
               <option name="schema">
                 <list>
                   <option value="tmplModel" />
@@ -607,97 +793,21 @@
             </ScannedPath>
           </value>
         </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/libs/config/oidc_clients.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769066486169" />
-              <option name="schema">
-                <list>
-                  <option value="OIDCClient" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/api/controllers/oidc_controller.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769066642138" />
-              <option name="schema">
-                <list>
-                  <option value="OIDCCallbackResponse" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/cmd/main.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769066751918" />
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/models/oidc_client.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769097263667" />
-              <option name="schema">
-                <list>
-                  <option value="OIDCClient" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/repository/oidc_client_repository.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769066509295" />
-              <option name="schema">
-                <list>
-                  <option value="OIDCClientRepository" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/services/auth_config_service.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769066568030" />
-              <option name="schema">
-                <list>
-                  <option value="AuthConfigService" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
-        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/Elevitae/backend/services/auth/internal/services/oidc_client_cache.go">
-          <value>
-            <ScannedPath>
-              <option name="lastModified" value="1769066598343" />
-              <option name="schema">
-                <list>
-                  <option value="OIDCClientCache" />
-                </list>
-              </option>
-            </ScannedPath>
-          </value>
-        </entry>
       </map>
     </option>
     <option name="tableStructMapping">
       <map>
         <entry key="alter" value="alter" />
-        <entry key="auth_config_service" value="AuthConfigService" />
+        <entry key="backup_code" value="BackupCode" />
         <entry key="change" value="change" />
+        <entry key="clean_options" value="CleanOptions" />
+        <entry key="clean_summary" value="CleanSummary" />
         <entry key="col_alter" value="ColAlter" />
         <entry key="config" value="Config" />
         <entry key="custom_date" value="CustomDate" />
         <entry key="field_history" value="FieldHistory" />
         <entry key="foreign_key_info" value="foreignKeyInfo" />
+        <entry key="foreign_key_row" value="foreignKeyRow" />
         <entry key="generate_options" value="GenerateOptions" />
         <entry key="index_column" value="indexColumn" />
         <entry key="index_definition" value="IndexDefinition" />
@@ -708,23 +818,29 @@
         <entry key="manifest_issue" value="ManifestIssue" />
         <entry key="manifest_lock" value="ManifestLock" />
         <entry key="manifest_lock_wire" value="manifestLockWire" />
-        <entry key="oidc_callback_response" value="OIDCCallbackResponse" />
         <entry key="oidc_client" value="OIDCClient" />
-        <entry key="oidc_client_cache" value="OIDCClientCache" />
-        <entry key="oidc_client_repository" value="OIDCClientRepository" />
+        <entry key="oidc_client_jsonb" value="oidcClientJSONB" />
+        <entry key="oidc_settings" value="OIDCSettings" />
         <entry key="ordered_map" value="orderedMap" />
+        <entry key="password_reset_token" value="PasswordResetToken" />
         <entry key="plan" value="Plan" />
+        <entry key="reset_options" value="ResetOptions" />
+        <entry key="reset_summary" value="ResetSummary" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />
         <entry key="schema_migration" value="SchemaMigration" />
         <entry key="schema_snapshot" value="SchemaSnapshot" />
         <entry key="seed_model_info" value="seedModelInfo" />
+        <entry key="service" value="Service" />
         <entry key="snapshot_table" value="SnapshotTable" />
+        <entry key="table_name_row" value="tableNameRow" />
         <entry key="tenant" value="Tenant" />
+        <entry key="tenant_domain" value="TenantDomain" />
+        <entry key="tenant_service" value="TenantService" />
         <entry key="tenant_user" value="TenantUser" />
         <entry key="tmpl_model" value="tmplModel" />
         <entry key="user" value="User" />
       </map>
     </option>
-    <option name="lastTimeChecked" value="1769057258483" />
+    <option name="lastTimeChecked" value="1770319805328" />
   </component>
 </project>
