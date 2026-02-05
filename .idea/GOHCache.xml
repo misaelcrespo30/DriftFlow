@@ -213,6 +213,13 @@
             </set>
           </value>
         </entry>
+        <entry key="fieldInfo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/seedgen.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="foreignKeyInfo">
           <value>
             <set>
@@ -759,10 +766,11 @@
         <entry key="file://$PROJECT_DIR$/seedgen.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1769061758232" />
+              <option name="lastModified" value="1770328871475" />
               <option name="schema">
                 <list>
                   <option value="seedModelInfo" />
+                  <option value="fieldInfo" />
                 </list>
               </option>
             </ScannedPath>
@@ -801,6 +809,13 @@
             </ScannedPath>
           </value>
         </entry>
+        <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/ApexBuildr/Backend/ApexBuildr-Back/services/project-service/internal/database/seed/register.go">
+          <value>
+            <ScannedPath>
+              <option name="lastModified" value="1770328180054" />
+            </ScannedPath>
+          </value>
+        </entry>
       </map>
     </option>
     <option name="tableStructMapping">
@@ -814,6 +829,7 @@
         <entry key="config" value="Config" />
         <entry key="custom_date" value="CustomDate" />
         <entry key="field_history" value="FieldHistory" />
+        <entry key="field_info" value="fieldInfo" />
         <entry key="foreign_key_info" value="foreignKeyInfo" />
         <entry key="foreign_key_row" value="foreignKeyRow" />
         <entry key="generate_options" value="GenerateOptions" />

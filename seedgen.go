@@ -973,6 +973,7 @@ func connectionStringField(t reflect.Type) (string, bool) {
 
 func buildSeedUniqueFields(models []interface{}) map[reflect.Type]map[string]bool {
 	uniqueFields := make(map[reflect.Type]map[string]bool)
+
 	for _, m := range models {
 		t := reflect.TypeOf(m)
 		if t == nil {
@@ -984,6 +985,17 @@ func buildSeedUniqueFields(models []interface{}) map[reflect.Type]map[string]boo
 		if t.Kind() != reflect.Struct {
 			continue
 		}
+
+		// 1) Contar cuántos campos participan en cada índice único con nombre
+		uniqueIndexFieldCount := map[string]int{}
+
+		// Guardamos info temporal por campo para el segundo pase
+		type fieldInfo struct {
+			jsonName string
+			tags     []indexTag
+		}
+		fields := make([]fieldInfo, 0, t.NumField())
+
 		for i := 0; i < t.NumField(); i++ {
 			f := t.Field(i)
 			if !f.IsExported() {
@@ -996,34 +1008,58 @@ func buildSeedUniqueFields(models []interface{}) map[reflect.Type]map[string]boo
 			if gtag == "-" || strings.Contains(gtag, "->") {
 				continue
 			}
-			tags := parseIndexTags(gtag)
-			if len(tags) == 0 {
-				continue
-			}
-			isUnique := false
-			for _, tag := range tags {
-				if tag.Unique {
-					isUnique = true
-					break
-				}
-			}
-			if !isUnique {
-				continue
-			}
+
 			tag := f.Tag.Get("json")
 			if strings.Split(tag, ",")[0] == "-" {
 				continue
 			}
-			name := strings.Split(tag, ",")[0]
-			if name == "" {
-				name = strings.ToLower(f.Name)
+			jsonName := strings.Split(tag, ",")[0]
+			if jsonName == "" {
+				jsonName = strings.ToLower(f.Name)
+			}
+
+			tags := parseIndexTags(gtag)
+			fields = append(fields, fieldInfo{jsonName: jsonName, tags: tags})
+
+			for _, it := range tags {
+				if it.Unique && it.Name != "" {
+					uniqueIndexFieldCount[it.Name]++
+				}
+			}
+		}
+
+		// 2) Marcar como unique field solo los realmente “single-column unique”
+		for _, fi := range fields {
+			mark := false
+
+			for _, it := range fi.tags {
+				if !it.Unique {
+					continue
+				}
+
+				// Caso A: constraint "unique" (sin nombre) = columna única real
+				if it.Kind == indexKindUniqueConstraint {
+					mark = true
+					break
+				}
+
+				// Caso B: índice único con nombre pero solo si es de 1 campo
+				if it.Name != "" && uniqueIndexFieldCount[it.Name] == 1 {
+					mark = true
+					break
+				}
+			}
+
+			if !mark {
+				continue
 			}
 			if uniqueFields[t] == nil {
 				uniqueFields[t] = make(map[string]bool)
 			}
-			uniqueFields[t][name] = true
+			uniqueFields[t][fi.jsonName] = true
 		}
 	}
+
 	return uniqueFields
 }
 
