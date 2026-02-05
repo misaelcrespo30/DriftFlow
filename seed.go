@@ -49,6 +49,9 @@ func GetSeeders() []Seeder {
 // Seed executes the Seed method of each registered Seeder using files in dir.
 // File name is derived from the seeder type name in lower case with .seed.json
 // (e.g. BookmarkSeeder -> bookmark.seed.json).
+// Seed executes the Seed method of each registered Seeder using files in dir.
+// File name is derived from the seeder type name in lower case with .seed.json
+// (e.g. BookmarkSeeder -> bookmark.seed.json).
 func Seed(db *gorm.DB, dir string) error {
 	seeders := GetSeeders()
 	if len(seeders) == 0 {
@@ -60,6 +63,8 @@ func Seed(db *gorm.DB, dir string) error {
 	if err := config.ValidateDir(dir); err != nil {
 		return err
 	}
+
+	// Ensure audit table exists (use original db; fine).
 	_ = EnsureAuditTable(db)
 
 	for _, s := range seeders {
@@ -75,11 +80,26 @@ func Seed(db *gorm.DB, dir string) error {
 		file := baseName + ".seed.json"
 		path := filepath.Join(dir, file)
 
-		if err := s.Seed(db, path); err != nil {
+		// ✅ Always run each seeder in an isolated, clean session so it doesn't
+		// inherit clauses/scopes (e.g., ON CONFLICT) from upstream callers.
+		cleanDB := db.Session(&gorm.Session{
+			NewDB: true,
+		})
+
+		// ✅ Isolate each seed in its own transaction:
+		// - prevents partial inserts per seeder
+		// - keeps audit record consistent with the insert
+		if err := cleanDB.Transaction(func(tx *gorm.DB) error {
+			if err := s.Seed(tx, path); err != nil {
+				return err
+			}
+			LogAuditEvent(tx, file, "seed")
+			return nil
+		}); err != nil {
 			return fmt.Errorf("seed %s failed: %w", file, err)
 		}
-		LogAuditEvent(db, file, "seed")
 	}
+
 	return nil
 }
 

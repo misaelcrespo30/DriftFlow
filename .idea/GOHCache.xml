@@ -759,14 +759,14 @@
         <entry key="file://$PROJECT_DIR$/seed.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1767155010041" />
+              <option name="lastModified" value="1770330269838" />
             </ScannedPath>
           </value>
         </entry>
         <entry key="file://$PROJECT_DIR$/seedgen.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1770328871475" />
+              <option name="lastModified" value="1770328892293" />
               <option name="schema">
                 <list>
                   <option value="seedModelInfo" />
@@ -812,7 +812,7 @@
         <entry key="file://$PROJECT_DIR$/../../ProyectosLuis/ApexBuildr/Backend/ApexBuildr-Back/services/project-service/internal/database/seed/register.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1770328180054" />
+              <option name="lastModified" value="1770329026356" />
             </ScannedPath>
           </value>
         </entry>
