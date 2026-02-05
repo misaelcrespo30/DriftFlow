@@ -395,7 +395,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 	}
 
 	// Tables in stable order based on input models
-	tablesInOrder := tablesFromModels(models, schemaMap)
+	tablesInOrder := orderTablesByFKDependencies(tablesFromModels(models, schemaMap), fkMap)
 
 	now := time.Now().UTC()
 	seq := 0
@@ -405,7 +405,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 	for _, table := range tablesInOrder {
 		modelCols := defMap[table] // col -> full definition
 		modelOrder := orderMap[table]
-		modelFKs := fkMap[table]
+		modelFKs := dedupeForeignKeys(fkMap[table])
 		modelIndexes := idxMap[table]
 
 		prev, exists := snap.Tables[table]
@@ -508,6 +508,87 @@ func tablesFromModels(models []interface{}, schemaMap schemaInfo) []string {
 		}
 	}
 	return tables
+}
+
+func dedupeForeignKeys(fks []foreignKeyInfo) []foreignKeyInfo {
+	if len(fks) <= 1 {
+		return fks
+	}
+	seen := make(map[string]struct{}, len(fks))
+	out := make([]foreignKeyInfo, 0, len(fks))
+	for _, fk := range fks {
+		key := fk.Column + "|" + fk.RefTable + "|" + fk.RefColumn
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, fk)
+	}
+	return out
+}
+
+func orderTablesByFKDependencies(tables []string, fkMap map[string][]foreignKeyInfo) []string {
+	if len(tables) <= 1 {
+		return tables
+	}
+	set := make(map[string]struct{}, len(tables))
+	for _, t := range tables {
+		set[t] = struct{}{}
+	}
+
+	deps := make(map[string]map[string]struct{}, len(tables))
+	reverse := make(map[string]map[string]struct{}, len(tables))
+	for _, t := range tables {
+		deps[t] = map[string]struct{}{}
+		reverse[t] = map[string]struct{}{}
+	}
+
+	for _, owner := range tables {
+		for _, fk := range dedupeForeignKeys(fkMap[owner]) {
+			if _, ok := set[fk.RefTable]; !ok || fk.RefTable == owner {
+				continue
+			}
+			deps[owner][fk.RefTable] = struct{}{}
+			reverse[fk.RefTable][owner] = struct{}{}
+		}
+	}
+
+	index := map[string]int{}
+	for i, t := range tables {
+		index[t] = i
+	}
+	ready := make([]string, 0, len(tables))
+	for _, t := range tables {
+		if len(deps[t]) == 0 {
+			ready = append(ready, t)
+		}
+	}
+	sort.SliceStable(ready, func(i, j int) bool { return index[ready[i]] < index[ready[j]] })
+
+	ordered := make([]string, 0, len(tables))
+	for len(ready) > 0 {
+		n := ready[0]
+		ready = ready[1:]
+		ordered = append(ordered, n)
+
+		children := make([]string, 0, len(reverse[n]))
+		for c := range reverse[n] {
+			children = append(children, c)
+		}
+		sort.SliceStable(children, func(i, j int) bool { return index[children[i]] < index[children[j]] })
+		for _, c := range children {
+			delete(deps[c], n)
+			if len(deps[c]) == 0 {
+				ready = append(ready, c)
+			}
+		}
+		sort.SliceStable(ready, func(i, j int) bool { return index[ready[i]] < index[ready[j]] })
+	}
+
+	if len(ordered) != len(tables) {
+		return tables
+	}
+	return ordered
 }
 
 func ts(now time.Time, seq int) string {

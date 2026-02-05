@@ -112,16 +112,41 @@ func removeMigration(db *gorm.DB, version string) error {
 	return db.Where("version = ?", version).Delete(&SchemaMigration{}).Error
 }
 
-// toSnakeCase converts CamelCase names to snake_case.
-func toSnakeCase(s string) string {
+// toSnakeWithInitialisms converts CamelCase names to snake_case and keeps
+// common initialisms grouped (e.g. ProjectID -> project_id, URLValue -> url_value).
+func toSnakeWithInitialisms(s string) string {
+	runes := []rune(strings.TrimSpace(s))
+	if len(runes) == 0 {
+		return ""
+	}
+
 	var out []rune
-	for i, r := range s {
-		if unicode.IsUpper(r) && i > 0 {
-			out = append(out, '_')
+	for i, r := range runes {
+		if i > 0 {
+			prev := runes[i-1]
+			var next rune
+			hasNext := i+1 < len(runes)
+			if hasNext {
+				next = runes[i+1]
+			}
+
+			if (unicode.IsUpper(r) && (unicode.IsLower(prev) || unicode.IsDigit(prev))) ||
+				(unicode.IsUpper(r) && unicode.IsUpper(prev) && hasNext && unicode.IsLower(next)) ||
+				(unicode.IsDigit(r) && unicode.IsLetter(prev)) ||
+				(unicode.IsLetter(r) && unicode.IsDigit(prev)) {
+				out = append(out, '_')
+			}
 		}
 		out = append(out, unicode.ToLower(r))
 	}
+
 	return string(out)
+}
+
+// toSnakeCase keeps backward compatibility while delegating to the improved
+// implementation that correctly handles initialisms.
+func toSnakeCase(s string) string {
+	return toSnakeWithInitialisms(s)
 }
 
 // gormTableName returns the table name for the given type following
@@ -785,6 +810,182 @@ type foreignKeyInfo struct {
 	RefColumn string
 }
 
+type relationKind string
+
+const (
+	relationNone      relationKind = "none"
+	relationHasOne    relationKind = "has_one"
+	relationHasMany   relationKind = "has_many"
+	relationBelongsTo relationKind = "belongs_to"
+)
+
+type relationInfo struct {
+	Kind             relationKind
+	ForeignKeyColumn string
+	ReferencesTable  string
+	ReferencesColumn string
+	OwnerTable       string
+}
+
+func isNavigationField(field reflect.StructField) bool {
+	ft := field.Type
+	if ft.Kind() == reflect.Pointer {
+		ft = ft.Elem()
+	}
+
+	if ft.Kind() == reflect.Slice {
+		if ft.Elem().Kind() == reflect.Uint8 {
+			return false
+		}
+		elem := ft.Elem()
+		if elem.Kind() == reflect.Pointer {
+			elem = elem.Elem()
+		}
+		return elem.Kind() == reflect.Struct && !isDatatypesJSON(elem)
+	}
+
+	if ft.Kind() != reflect.Struct {
+		return false
+	}
+
+	if ft.PkgPath() == "time" && ft.Name() == "Time" {
+		return false
+	}
+	if isGormDeletedAtType(ft) {
+		return false
+	}
+
+	return true
+}
+
+func inferRelation(model reflect.Type, field reflect.StructField) relationInfo {
+	if model.Kind() == reflect.Pointer {
+		model = model.Elem()
+	}
+	if model.Kind() != reflect.Struct || !isNavigationField(field) {
+		return relationInfo{Kind: relationNone}
+	}
+
+	fieldType := field.Type
+	isSlice := false
+	if fieldType.Kind() == reflect.Pointer {
+		fieldType = fieldType.Elem()
+	}
+	if fieldType.Kind() == reflect.Slice {
+		isSlice = true
+		fieldType = fieldType.Elem()
+		if fieldType.Kind() == reflect.Pointer {
+			fieldType = fieldType.Elem()
+		}
+	}
+	if fieldType.Kind() != reflect.Struct {
+		return relationInfo{Kind: relationNone}
+	}
+
+	gtag := field.Tag.Get("gorm")
+	fkFieldName := strings.TrimSpace(getTagValue(gtag, "foreignKey"))
+	referencesFieldName := strings.TrimSpace(getTagValue(gtag, "references"))
+	if referencesFieldName == "" {
+		referencesFieldName = "ID"
+	}
+
+	resolveColumnForField := func(t reflect.Type, fieldName string) string {
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() != reflect.Struct {
+			return toSnakeWithInitialisms(fieldName)
+		}
+		if f, ok := t.FieldByName(fieldName); ok {
+			if col := getTagValue(f.Tag.Get("gorm"), "column"); col != "" {
+				return col
+			}
+			return toSnakeWithInitialisms(f.Name)
+		}
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if strings.EqualFold(f.Name, fieldName) {
+				if col := getTagValue(f.Tag.Get("gorm"), "column"); col != "" {
+					return col
+				}
+				return toSnakeWithInitialisms(f.Name)
+			}
+		}
+		return toSnakeWithInitialisms(fieldName)
+	}
+
+	hasScalarFKField := func(t reflect.Type, fieldName string) bool {
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+		if t.Kind() != reflect.Struct {
+			return false
+		}
+		f, ok := t.FieldByName(fieldName)
+		if !ok {
+			for i := 0; i < t.NumField(); i++ {
+				candidate := t.Field(i)
+				if strings.EqualFold(candidate.Name, fieldName) {
+					f = candidate
+					ok = true
+					break
+				}
+			}
+		}
+		if !ok {
+			return false
+		}
+
+		ft := f.Type
+		if ft.Kind() == reflect.Pointer {
+			ft = ft.Elem()
+		}
+		return ft.Kind() != reflect.Struct && ft.Kind() != reflect.Slice && ft.Kind() != reflect.Array && ft.Kind() != reflect.Map
+	}
+
+	if isSlice {
+		if fkFieldName == "" {
+			fkFieldName = model.Name() + "ID"
+		}
+		return relationInfo{
+			Kind:             relationHasMany,
+			ForeignKeyColumn: resolveColumnForField(fieldType, fkFieldName),
+			ReferencesTable:  gormTableName(model),
+			ReferencesColumn: resolveColumnForField(model, referencesFieldName),
+			OwnerTable:       gormTableName(fieldType),
+		}
+	}
+
+	belongsTo := getTagValue(gtag, "belongsTo") != ""
+	if fkFieldName == "" {
+		fkFieldName = field.Name + "ID"
+	}
+	if hasScalarFKField(model, fkFieldName) {
+		belongsTo = true
+	}
+
+	if belongsTo {
+		return relationInfo{
+			Kind:             relationBelongsTo,
+			ForeignKeyColumn: resolveColumnForField(model, fkFieldName),
+			ReferencesTable:  gormTableName(fieldType),
+			ReferencesColumn: resolveColumnForField(fieldType, referencesFieldName),
+			OwnerTable:       gormTableName(model),
+		}
+	}
+
+	if fkFieldName == "" {
+		fkFieldName = model.Name() + "ID"
+	}
+	return relationInfo{
+		Kind:             relationHasOne,
+		ForeignKeyColumn: resolveColumnForField(fieldType, fkFieldName),
+		ReferencesTable:  gormTableName(model),
+		ReferencesColumn: resolveColumnForField(model, referencesFieldName),
+		OwnerTable:       gormTableName(fieldType),
+	}
+}
+
 func buildModelSchema(models []interface{}, engine string) (schemaInfo, map[string][]string, map[string]tableInfo, map[string][]foreignKeyInfo, map[string][]IndexDefinition, error) {
 	s := make(schemaInfo)
 	orderMap := make(map[string][]string)
@@ -805,112 +1006,6 @@ func buildModelSchema(models []interface{}, engine string) (schemaInfo, map[stri
 	isTimeType := func(t reflect.Type) bool {
 		// Covers time.Time and also types named "Time" in package "time"
 		return t.Kind() == reflect.Struct && t.PkgPath() == "time" && t.Name() == "Time"
-	}
-
-	// Determines whether a struct/slice field should be treated as a relationship (not a column)
-	isRelationField := func(field reflect.StructField, ft reflect.Type) bool {
-		gtag := field.Tag.Get("gorm")
-		if gtag == "" {
-			return false
-		}
-
-		// Common relation directives in GORM tags
-		if getTagValue(gtag, "foreignKey") != "" ||
-			getTagValue(gtag, "references") != "" ||
-			getTagValue(gtag, "many2many") != "" ||
-			getTagValue(gtag, "polymorphic") != "" ||
-			getTagValue(gtag, "joinForeignKey") != "" ||
-			getTagValue(gtag, "joinReferences") != "" {
-			return true
-		}
-
-		// Slices are typically has-many relations unless explicitly marked otherwise
-		if ft.Kind() == reflect.Slice && !isDatatypesJSON(ft) {
-			return true
-		}
-
-		return false
-	}
-
-	// Resolve "references:<FieldName>" to the actual referenced column name.
-	// - If the referenced struct field has gorm:"column:..." -> use that.
-	// - Else fall back to snake_case(FieldName), but correctly handle "ID" as "id"
-	resolveRefColumn := func(refType reflect.Type, refFieldName string) string {
-		if refType.Kind() == reflect.Pointer {
-			refType = refType.Elem()
-		}
-		if refType.Kind() != reflect.Struct {
-			return "id"
-		}
-
-		// Default if no references specified
-		if refFieldName == "" {
-			// Prefer explicit "ID" if present, else "id"
-			if _, ok := refType.FieldByName("ID"); ok {
-				if rf, ok2 := refType.FieldByName("ID"); ok2 {
-					colName := getTagValue(rf.Tag.Get("gorm"), "column")
-					if colName != "" {
-						return colName
-					}
-				}
-				return "id"
-			}
-			return "id"
-		}
-
-		// Find the referenced field in the referenced struct
-		if rf, ok := refType.FieldByName(refFieldName); ok {
-			colName := getTagValue(rf.Tag.Get("gorm"), "column")
-			if colName != "" {
-				return colName
-			}
-			// If no column tag, convert field name safely
-			if refFieldName == "ID" {
-				return "id"
-			}
-			return toSnakeCase(refFieldName)
-		}
-
-		// Fallback
-		if refFieldName == "ID" {
-			return "id"
-		}
-		return toSnakeCase(refFieldName)
-	}
-
-	// Resolve local FK column by Go field name, respecting gorm:"column:..."
-	resolveLocalFKColumn := func(parentType reflect.Type, fkFieldName string) string {
-		fkFieldName = strings.TrimSpace(fkFieldName)
-		if fkFieldName == "" {
-			return ""
-		}
-
-		// Default snake_case of Go field name
-		fkCol := toSnakeCase(fkFieldName)
-
-		// If the parent struct has a field with that name, and it has column tag, use it
-		if fld, ok := parentType.FieldByName(fkFieldName); ok {
-			colName := getTagValue(fld.Tag.Get("gorm"), "column")
-			if colName != "" {
-				fkCol = colName
-			}
-		} else {
-			// Common case: fkFieldName is "UserID"/"TenantID"/etc.
-			// If your struct uses "UserID" but references might specify "UserId" etc.
-			// We'll try a case-insensitive match:
-			for i := 0; i < parentType.NumField(); i++ {
-				f := parentType.Field(i)
-				if strings.EqualFold(f.Name, fkFieldName) {
-					colName := getTagValue(f.Tag.Get("gorm"), "column")
-					if colName != "" {
-						return colName
-					}
-					return toSnakeCase(f.Name)
-				}
-			}
-		}
-
-		return fkCol
 	}
 
 	collectFields = func(t reflect.Type, cols tableInfo, defs tableInfo, order *[]string, tbl string) {
@@ -944,37 +1039,15 @@ func buildModelSchema(models []interface{}, engine string) (schemaInfo, map[stri
 
 			gtag := f.Tag.Get("gorm")
 
-			// ✅ If relationship field -> build FK (if any) and SKIP creating a column
-			// Also skip special struct fields like time.Time and gorm.DeletedAt as columns (they are columns, not relations)
-			if (ft.Kind() == reflect.Struct || ft.Kind() == reflect.Slice) &&
-				!isTimeType(ft) &&
-				!isGormDeletedAtType(ft) &&
-				isRelationField(f, ft) {
-
-				// Only struct relations can define FK directives in this style
-				if ft.Kind() == reflect.Struct {
-					fkField := getTagValue(gtag, "foreignKey")
-					if fkField != "" {
-						refTbl := gormTableName(ft)
-						refFieldName := getTagValue(gtag, "references") // this is Go field name in referenced struct
-						refCol := resolveRefColumn(ft, refFieldName)
-
-						fkFields := strings.Split(fkField, ",")
-						for _, fk := range fkFields {
-							fkCol := resolveLocalFKColumn(t, fk)
-							if fkCol == "" {
-								continue
-							}
-							fkMap[tbl] = append(fkMap[tbl], foreignKeyInfo{
-								Column:    fkCol,
-								RefTable:  refTbl,
-								RefColumn: refCol,
-							})
-						}
-					}
+			if isNavigationField(f) {
+				rel := inferRelation(t, f)
+				if rel.Kind != relationNone && rel.ForeignKeyColumn != "" && rel.OwnerTable != "" && rel.ReferencesTable != "" {
+					fkMap[rel.OwnerTable] = append(fkMap[rel.OwnerTable], foreignKeyInfo{
+						Column:    rel.ForeignKeyColumn,
+						RefTable:  rel.ReferencesTable,
+						RefColumn: rel.ReferencesColumn,
+					})
 				}
-
-				// ✅ Critical: do not treat relationship as a DB column
 				continue
 			}
 
