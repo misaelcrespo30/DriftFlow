@@ -276,6 +276,13 @@
             </set>
           </value>
         </entry>
+        <entry key="relationInfo">
+          <value>
+            <set>
+              <option value="file://$PROJECT_DIR$/migrations.go" />
+            </set>
+          </value>
+        </entry>
         <entry key="seedModelInfo">
           <value>
             <set>
@@ -690,13 +697,14 @@
         <entry key="file://$PROJECT_DIR$/migrations.go">
           <value>
             <ScannedPath>
-              <option name="lastModified" value="1769099507500" />
+              <option name="lastModified" value="1770321176378" />
               <option name="schema">
                 <list>
                   <option value="SchemaMigration" />
                   <option value="alter" />
                   <option value="change" />
                   <option value="foreignKeyInfo" />
+                  <option value="relationInfo" />
                 </list>
               </option>
             </ScannedPath>
@@ -824,6 +832,7 @@
         <entry key="ordered_map" value="orderedMap" />
         <entry key="password_reset_token" value="PasswordResetToken" />
         <entry key="plan" value="Plan" />
+        <entry key="relation_info" value="relationInfo" />
         <entry key="reset_options" value="ResetOptions" />
         <entry key="reset_summary" value="ResetSummary" />
         <entry key="schema_audit_log" value="SchemaAuditLog" />

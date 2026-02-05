@@ -1003,10 +1003,10 @@ func buildModelSchema(models []interface{}, engine string) (schemaInfo, map[stri
 	)
 
 	// Helpers
-	isTimeType := func(t reflect.Type) bool {
+	/*isTimeType := func(t reflect.Type) bool {
 		// Covers time.Time and also types named "Time" in package "time"
 		return t.Kind() == reflect.Struct && t.PkgPath() == "time" && t.Name() == "Time"
-	}
+	}*/
 
 	collectFields = func(t reflect.Type, cols tableInfo, defs tableInfo, order *[]string, tbl string) {
 		if t.Kind() == reflect.Pointer {
