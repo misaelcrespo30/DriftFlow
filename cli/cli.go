@@ -2,7 +2,9 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -525,6 +527,188 @@ func newCompareCommand() *cobra.Command {
 	return cmd
 }
 
+func newInitDBCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "initdb",
+		Short: "Safely manage databases",
+	}
+
+	cmd.AddCommand(newInitDBCreateCommand())
+	cmd.AddCommand(newInitDBDropCommand())
+	cmd.AddCommand(newInitDBBackupCommand())
+	cmd.AddCommand(newInitDBRestoreCommand())
+
+	return cmd
+}
+
+func newInitDBCreateCommand() *cobra.Command {
+	var dbName string
+
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create database if it does not exist",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			svc := driftflow.NewDbAdminService(dsn, driver)
+			name, err := svc.ResolveDBName(dbName)
+			if err != nil {
+				return err
+			}
+
+			created, err := svc.Create(context.Background(), name)
+			if err != nil {
+				return err
+			}
+
+			if !created {
+				fmt.Fprintln(cmd.OutOrStdout(), "Database already exists")
+				return nil
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), "Database created successfully")
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&dbName, "db", "", "database name override")
+	return cmd
+}
+
+func newInitDBDropCommand() *cobra.Command {
+	var dbName string
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "drop",
+		Short: "Drop a database with explicit confirmation",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if strings.TrimSpace(dbName) == "" {
+				return errors.New("--db is required")
+			}
+			if err := driftflow.ValidateDBName(dbName); err != nil {
+				return err
+			}
+
+			if !force {
+				confirmed, err := confirmDropDatabase(cmd, dbName)
+				if err != nil {
+					return err
+				}
+				if !confirmed {
+					fmt.Fprintln(cmd.OutOrStdout(), "Aborted")
+					return nil
+				}
+			}
+
+			svc := driftflow.NewDbAdminService(dsn, driver)
+			_, err := svc.Drop(context.Background(), dbName)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Database deleted successfully")
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&dbName, "db", "", "database name")
+	cmd.Flags().BoolVarP(&force, "yes", "y", false, "skip interactive confirmation")
+	cmd.Flags().BoolVar(&force, "force", false, "skip interactive confirmation")
+	return cmd
+}
+
+func newInitDBBackupCommand() *cobra.Command {
+	var dbName string
+	var output string
+
+	cmd := &cobra.Command{
+		Use:   "backup",
+		Short: "Create a database backup",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if strings.TrimSpace(output) == "" {
+				return errors.New("--output is required")
+			}
+			svc := driftflow.NewDbAdminService(dsn, driver)
+			name, err := svc.ResolveDBName(dbName)
+			if err != nil {
+				return err
+			}
+			if err := svc.Backup(context.Background(), name, output); err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Backup completed: %s\n", output)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&dbName, "db", "", "database name override")
+	cmd.Flags().StringVar(&output, "output", "", "backup output file path")
+	return cmd
+}
+
+func newInitDBRestoreCommand() *cobra.Command {
+	var dbName string
+	var file string
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "restore",
+		Short: "Restore database from SQL dump",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if strings.TrimSpace(file) == "" {
+				return errors.New("--file is required")
+			}
+			svc := driftflow.NewDbAdminService(dsn, driver)
+			name, err := svc.ResolveDBName(dbName)
+			if err != nil {
+				return err
+			}
+
+			if !force {
+				confirmed, err := confirmRestore(cmd, name, file)
+				if err != nil {
+					return err
+				}
+				if !confirmed {
+					fmt.Fprintln(cmd.OutOrStdout(), "Aborted")
+					return nil
+				}
+			}
+
+			if err := svc.Restore(context.Background(), name, file); err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Restore completed")
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&dbName, "db", "", "database name override")
+	cmd.Flags().StringVar(&file, "file", "", "backup file path")
+	cmd.Flags().BoolVarP(&force, "yes", "y", false, "skip interactive confirmation")
+	cmd.Flags().BoolVar(&force, "force", false, "skip interactive confirmation")
+	return cmd
+}
+
+func confirmDropDatabase(cmd *cobra.Command, dbName string) (bool, error) {
+	reader := bufio.NewReader(cmd.InOrStdin())
+	fmt.Fprintf(cmd.OutOrStdout(), "You are about to delete database %s\n", dbName)
+	fmt.Fprint(cmd.OutOrStdout(), "Type the database name to confirm: ")
+	input, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+	return strings.TrimSpace(input) == dbName, nil
+}
+
+func confirmRestore(cmd *cobra.Command, dbName, file string) (bool, error) {
+	reader := bufio.NewReader(cmd.InOrStdin())
+	fmt.Fprintf(cmd.OutOrStdout(), "This will restore %s from %s. Continue? (y/N) ", dbName, file)
+	input, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+	return strings.EqualFold(strings.TrimSpace(input), "y"), nil
+}
+
 /////////////////////////////////////
 
 func Commands(cfg *config.Config) []*cobra.Command {
@@ -550,5 +734,6 @@ func Commands(cfg *config.Config) []*cobra.Command {
 		newValidateCommand(),
 		newAuditCommand(),
 		newCompareCommand(),
+		newInitDBCommand(),
 	}
 }

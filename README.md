@@ -65,6 +65,10 @@ driftflow validate        # valida el directorio de migraciones
 driftflow audit list      # lista el log de auditoría
 driftflow audit export    # exporta el log (usa --json para JSON)
 driftflow compare         # compara dos bases de datos
+driftflow initdb create   # crea una base (idempotente)
+driftflow initdb drop     # elimina una base con confirmación
+driftflow initdb backup   # genera backup completo (según driver)
+driftflow initdb restore  # restaura desde backup (según driver)
 ```
 
 Flags globales útiles:
@@ -89,7 +93,177 @@ Para `audit export`:
 driftflow audit export --json
 ```
 
+Para administración segura de bases (`initdb`) con `postgres`, `mysql`, `sqlserver` y `mongodb`:
+
+```bash
+driftflow initdb create
+driftflow initdb create --db my_tenant_db
+driftflow initdb drop --db my_tenant_db
+driftflow initdb drop --db my_tenant_db --yes
+driftflow initdb backup --output backups/app.sql
+driftflow initdb backup --db my_tenant_db --output backups/tenant.sql
+driftflow initdb restore --file backups/app.sql
+driftflow initdb restore --db my_tenant_db --file backups/tenant.sql --yes
+```
+
+### Especificaciones de `initdb` por motor
+
+Ejemplo de `connection_string` compatible (PostgreSQL):
+
+```text
+postgres://postgres:postgres@postgres:5432/apexbuildr_auth_service?sslmode=disable
+```
+
+- Soporte de drivers: `postgres`, `mysql`, `sqlserver`, `mongodb` (usa el `--driver` global o `DB_TYPE` del `.env`).
+- `create` es idempotente: si la base ya existe imprime `Database already exists` y termina en éxito.
+- `drop` siempre requiere `--db`, y por defecto pide confirmación explícita escribiendo el nombre exacto de la base (se puede omitir con `--yes` o `--force`).
+- `backup` requiere `--output`; `restore` requiere `--file` y confirmación por defecto (`y` o `--yes/--force`).
+- Validación de `--db`: solo letras/números/underscore (`^[a-zA-Z0-9_]+$`) y bloqueo de nombres reservados (`postgres`, `template0`, `template1`).
+
+Herramientas utilizadas por motor:
+
+- PostgreSQL: `pg_dump` (backup) y `psql` (restore).
+- MySQL: `mysqldump` (backup) y `mysql` (restore).
+- SQL Server: backup/restore ejecutados por SQL (`BACKUP DATABASE` / `RESTORE DATABASE`) mediante la conexión configurada.
+- MongoDB: `mongodump` (backup) y `mongorestore` (restore).
+
+
+### Uso de `initdb` desde Go (microservicio de aprovisionamiento)
+
+Además del CLI, puedes usar `DbAdminService` directamente desde tu código para aprovisionar múltiples bases (por ejemplo, una por tenant) y luego crear tablas.
+
+```go
+package provisioning
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "net/url"
+
+    driftflow "github.com/misaelcrespo30/DriftFlow"
+    "github.com/misaelcrespo30/DriftFlow/config"
+)
+
+// Ejemplo de modelo de dominio
+type TenantUser struct {
+    ID    uint   `gorm:"primaryKey"`
+    Email string `gorm:"uniqueIndex"`
+}
+
+func ProvisionTenantDatabases(ctx context.Context, dbNames []string) error {
+    cfg := config.Load()
+
+    admin := driftflow.NewDbAdminService(cfg.DSN, cfg.Driver)
+
+    for _, dbName := range dbNames {
+        created, err := admin.Create(ctx, dbName)
+        if err != nil {
+            return fmt.Errorf("create %s: %w", dbName, err)
+        }
+
+        if !created {
+            log.Printf("database %s already exists (idempotente)", dbName)
+        }
+
+        // Conectar a la DB recién creada (o existente)
+        tenantDSN, err := dsnWithDatabase(cfg.Driver, cfg.DSN, dbName)
+        if err != nil {
+            return err
+        }
+
+        tenantDB, err := driftflow.ConnectToDB(tenantDSN, cfg.Driver)
+        if err != nil {
+            return fmt.Errorf("connect %s: %w", dbName, err)
+        }
+
+        // Crear tablas del tenant
+        if err := tenantDB.AutoMigrate(&TenantUser{}); err != nil {
+            return fmt.Errorf("migrate %s: %w", dbName, err)
+        }
+    }
+
+    return nil
+}
+
+func dsnWithDatabase(driver, dsn, dbName string) (string, error) {
+    u, err := url.Parse(dsn)
+    if err != nil {
+        return "", err
+    }
+
+    switch driver {
+    case "postgres", "mysql":
+        u.Path = "/" + dbName
+    case "sqlserver":
+        q := u.Query()
+        q.Set("database", dbName)
+        u.RawQuery = q.Encode()
+    default:
+        return "", fmt.Errorf("unsupported driver: %s", driver)
+    }
+
+    return u.String(), nil
+}
+```
+
+Este flujo te permite orquestar aprovisionamiento desde un microservicio sin depender del comando `driftflow initdb` en shell.
+
 ## Uso como librería
+
+### Patrón recomendado para usar DriftFlow desde otro microservicio
+
+Si tu microservicio de aprovisionamiento no quiere invocar el binario CLI, puedes usar DriftFlow como librería y encadenar `generate` + `up` + `seed` en código Go:
+
+```go
+package provisioning
+
+import (
+    "fmt"
+
+    driftflow "github.com/misaelcrespo30/DriftFlow"
+    "github.com/misaelcrespo30/DriftFlow/config"
+    "github.com/misaelcrespo30/DriftFlow/helpers"
+)
+
+// ProvisionSchemaAndData crea/actualiza esquema y datos iniciales de una base.
+func ProvisionSchemaAndData() error {
+    cfg := config.Load() // reutiliza .env y la misma resolución de DSN/driver
+
+    db, err := driftflow.ConnectToDB(cfg.DSN, cfg.Driver)
+    if err != nil {
+        return fmt.Errorf("connect db: %w", err)
+    }
+
+    // 1) generate: construir migraciones desde modelos
+    models, err := helpers.LoadModels()
+    if err != nil {
+        return fmt.Errorf("load models: %w", err)
+    }
+
+    if err := driftflow.GenerateModelMigrations(models, driftflow.GenerateOptions{
+        Dir:          cfg.MigDir,
+        ManifestMode: driftflow.ManifestStrict,
+        Engine:       cfg.Driver,
+    }); err != nil {
+        return fmt.Errorf("generate migrations: %w", err)
+    }
+
+    // 2) up: aplicar migraciones pendientes
+    if err := driftflow.Up(db, cfg.MigDir); err != nil {
+        return fmt.Errorf("apply migrations: %w", err)
+    }
+
+    // 3) seed: poblar datos iniciales
+    if err := driftflow.Seed(db, cfg.SeedRunDir); err != nil {
+        return fmt.Errorf("run seeds: %w", err)
+    }
+
+    return nil
+}
+```
+
+Este mecanismo permite que cualquier microservicio consumidor de DriftFlow haga provisioning completo sin depender del CLI.
 
 ### Conexión y migraciones
 
