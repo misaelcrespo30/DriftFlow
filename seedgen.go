@@ -284,6 +284,7 @@ func ruleValueForField(name string, t reflect.Type, idx int) (interface{}, bool)
 		if strings.Contains(normalized, "domain") {
 			return jsonValue(allowedRootDomains()), true
 		}
+		return defaultJSONValueForField(name, idx), true
 	}
 
 	if strings.Contains(normalized, "domain") && t.Kind() == reflect.String {
@@ -295,6 +296,32 @@ func ruleValueForField(name string, t reflect.Type, idx int) (interface{}, bool)
 	}
 
 	return nil, false
+}
+
+func defaultJSONValueForField(name string, idx int) json.RawMessage {
+	key := strings.TrimSuffix(strings.ToLower(name), "_json")
+	if key == "" {
+		key = "payload"
+	}
+	payload := map[string]interface{}{
+		"type":  key,
+		"index": idx + 1,
+		"status": map[string]interface{}{
+			"code":    "ok",
+			"message": fmt.Sprintf("%s generated", key),
+		},
+		"payload": map[string]interface{}{
+			"id":    fmt.Sprintf("%s_%d", key, idx+1),
+			"source": "seedgen",
+			"active": idx%2 == 0,
+			"tags":   []string{key, "seed", "sample"},
+			"items": []map[string]interface{}{
+				{"name": "item_1", "value": idx + 1},
+				{"name": "item_2", "value": idx + 2},
+			},
+		},
+	}
+	return jsonValue(payload)
 }
 
 func normalizedFieldName(name string) string {

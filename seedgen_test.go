@@ -146,6 +146,49 @@ func TestRuleAllowedRedirectURIsJSON(t *testing.T) {
 	}
 }
 
+func TestRuleGenericJSONFieldGetsObjectPayload(t *testing.T) {
+	value := dummyValueForField("response_json", reflect.TypeOf(JSON{}), 2, time.Now())
+	raw, ok := value.(json.RawMessage)
+	if !ok {
+		t.Fatalf("expected json.RawMessage, got %T", value)
+	}
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		t.Fatalf("unmarshal payload: %v", err)
+	}
+
+	if payload["type"] != "response" {
+		t.Fatalf("expected type response, got %#v", payload["type"])
+	}
+	if payload["index"] != float64(3) {
+		t.Fatalf("expected index 3, got %#v", payload["index"])
+	}
+
+	status, ok := payload["status"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected status object, got %#v", payload["status"])
+	}
+	if status["code"] != "ok" {
+		t.Fatalf("expected status code ok, got %#v", status["code"])
+	}
+
+	inner, ok := payload["payload"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected payload object, got %#v", payload["payload"])
+	}
+	if inner["id"] != "response_3" {
+		t.Fatalf("expected payload id response_3, got %#v", inner["id"])
+	}
+	if inner["source"] != "seedgen" {
+		t.Fatalf("expected payload source seedgen, got %#v", inner["source"])
+	}
+	tags, ok := inner["tags"].([]interface{})
+	if !ok || len(tags) != 3 {
+		t.Fatalf("expected 3 tags, got %#v", inner["tags"])
+	}
+}
+
 func TestDedupeSeedObjectsByNaturalKey(t *testing.T) {
 	obj1 := newOrderedMap()
 	obj1.set("service_key", "branding")
