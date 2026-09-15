@@ -205,7 +205,7 @@ func newGenerateCommand() *cobra.Command {
 	var repair bool
 	var adopt bool
 
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate migration files from models (snapshot + incremental)",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -229,10 +229,9 @@ func newGenerateCommand() *cobra.Command {
 		},
 	}
 
-	/*cmd.Flags().BoolVar(&repair, "repair", false, "Repair modified migration files (recalculate hashes)")
+	cmd.Flags().BoolVar(&repair, "repair", false, "Recalculate manifest hashes for migration files (does not rewrite SQL)")
 	cmd.Flags().BoolVar(&adopt, "adopt", false, "Adopt untracked migration files into manifest (requires --repair)")
-
-	return cmd*/
+	return cmd
 }
 
 func newMigrateCommand() *cobra.Command {

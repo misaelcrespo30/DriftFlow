@@ -80,7 +80,7 @@ func ensureManifestIntegrity(dir string) error {
 		}
 		sb.WriteString("\n")
 	}
-	return fmt.Errorf(strings.TrimSpace(sb.String()))
+	return fmt.Errorf("%s", strings.TrimSpace(sb.String()))
 }
 
 // readMigrationFiles returns the migration files sorted by name.
@@ -380,8 +380,12 @@ func Up(db *gorm.DB, dir string) error {
 			return result.Error
 		}
 		if result.RowsAffected > 0 {
-			// ✅ si ya existe, valida checksum (opcional pero recomendado)
-			if m.Checksum != checksum {
+			// Validate checksum; accept legacy raw hashes (pre line-ending normalization).
+			raw, err := os.ReadFile(f)
+			if err != nil {
+				return err
+			}
+			if !checksumMatchesStored(m.Checksum, raw) {
 				return fmt.Errorf("migration modified after applied: %s", version)
 			}
 			continue
@@ -474,11 +478,15 @@ func DownSteps(db *gorm.DB, dir string, steps int) error {
 		if !ok {
 			return fmt.Errorf("missing down file for %s", version)
 		}
-		_, downSQL, checksum, err := readMigrationFile(file)
+		_, downSQL, _, err := readMigrationFile(file)
 		if err != nil {
 			return err
 		}
-		if appliedSet[version].Checksum != checksum {
+		raw, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		if !checksumMatchesStored(appliedSet[version].Checksum, raw) {
 			return fmt.Errorf("migration modified after applied: %s", version)
 		}
 		if err := db.Exec(downSQL).Error; err != nil {
@@ -598,7 +606,7 @@ func MigrateTo(db *gorm.DB, dir string, targetVersion string) error {
 	for i := currentIndex; i > targetIndex; i-- {
 		version := versions[i]
 		file := versionToFile[version]
-		_, downSQL, checksum, err := readMigrationFile(file)
+		_, downSQL, _, err := readMigrationFile(file)
 		if err != nil {
 			return err
 		}
@@ -606,7 +614,11 @@ func MigrateTo(db *gorm.DB, dir string, targetVersion string) error {
 		if !ok {
 			return fmt.Errorf("applied migration missing from db: %s", version)
 		}
-		if applied.Checksum != checksum {
+		raw, err := os.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		if !checksumMatchesStored(applied.Checksum, raw) {
 			return fmt.Errorf("migration modified after applied: %s", version)
 		}
 		if err := db.Exec(downSQL).Error; err != nil {

@@ -140,7 +140,15 @@ func hashMigrationFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return sha256Hex(b), nil
+	return migrationFileChecksum(b), nil
+}
+
+func migrationHashMatches(stored string, path string) (bool, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	return checksumMatchesStored(stored, b), nil
 }
 
 func migrateManifest(dir string, manifest *ManifestLock) (bool, error) {
@@ -208,19 +216,18 @@ func validateManifest(dir string, manifest *ManifestLock) ([]ManifestIssue, erro
 		}
 	}
 
-	// 2) verify tracked entries hashes
+	// 2) verify tracked entries hashes (LF-normalized; also accepts legacy raw hashes)
 	for name, e := range entries {
 		if _, ok := diskNames[name]; !ok {
 			continue
 		}
 		path := filepath.Join(dir, name)
 
-		hash, err := hashMigrationFile(path)
+		ok, err := migrationHashMatches(e.SQLSHA256, path)
 		if err != nil {
 			return nil, err
 		}
-
-		if !strings.EqualFold(hash, e.SQLSHA256) {
+		if !ok {
 			issues = append(issues, ManifestIssue{Type: IssueHashMismatch, Migration: name, File: path, Detail: "SQL hash mismatch"})
 		}
 	}
