@@ -2,6 +2,7 @@ package driftflow
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,36 @@ const (
 	migrationUpMarker   = "-- +migrate Up"
 	migrationDownMarker = "-- +migrate Down"
 )
+
+// normalizeMigrationBytes canonicalizes migration file bytes before hashing.
+// Git autocrlf / editors on Windows often turn LF into CRLF; without this,
+// manifest.lock.json hashes break across machines even when SQL is identical.
+func normalizeMigrationBytes(b []byte) []byte {
+	if len(b) == 0 {
+		return b
+	}
+	// Strip UTF-8 BOM if present.
+	b = bytes.TrimPrefix(b, []byte{0xEF, 0xBB, 0xBF})
+	b = bytes.ReplaceAll(b, []byte("\r\n"), []byte("\n"))
+	b = bytes.ReplaceAll(b, []byte("\r"), []byte("\n"))
+	return b
+}
+
+func migrationFileChecksum(b []byte) string {
+	return sha256Hex(normalizeMigrationBytes(b))
+}
+
+// checksumMatchesStored accepts the canonical (LF-normalized) hash and the
+// legacy raw-byte hash so DBs / manifests created before normalization keep working.
+func checksumMatchesStored(stored string, raw []byte) bool {
+	if stored == "" {
+		return false
+	}
+	if strings.EqualFold(stored, migrationFileChecksum(raw)) {
+		return true
+	}
+	return strings.EqualFold(stored, sha256Hex(raw))
+}
 
 func normalizeMigrationSection(sql string) string {
 	return strings.TrimSpace(sql)
@@ -75,7 +106,7 @@ func readMigrationSections(path string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	return splitMigrationSections(string(b))
+	return splitMigrationSections(string(normalizeMigrationBytes(b)))
 }
 
 func readMigrationFile(path string) (string, string, string, error) {
@@ -83,11 +114,12 @@ func readMigrationFile(path string) (string, string, string, error) {
 	if err != nil {
 		return "", "", "", err
 	}
-	upSQL, downSQL, err := splitMigrationSections(string(b))
+	// Parse markers from normalized text so CRLF checkouts still split cleanly.
+	upSQL, downSQL, err := splitMigrationSections(string(normalizeMigrationBytes(b)))
 	if err != nil {
 		return "", "", "", err
 	}
-	return upSQL, downSQL, sha256Hex(b), nil
+	return upSQL, downSQL, migrationFileChecksum(b), nil
 }
 
 func writeMigrationFile(dir, baseName, upSQL, downSQL string) error {

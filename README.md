@@ -54,6 +54,8 @@ Comandos disponibles:
 ```bash
 driftflow generate        # genera migraciones desde modelos
                           # (snapshot + incremental)
+driftflow generate --repair          # re-firma hashes del manifest
+driftflow generate --repair --adopt  # + adopta .sql fuera del manifest
 driftflow migrate         # genera y aplica migraciones
 driftflow up              # aplica migraciones pendientes
 driftflow down VERSION    # revierte migraciones posteriores a VERSION
@@ -208,6 +210,31 @@ func dsnWithDatabase(driver, dsn, dbName string) (string, error) {
 ```
 
 Este flujo te permite orquestar aprovisionamiento desde un microservicio sin depender del comando `driftflow initdb` en shell.
+
+## Manifest integrity (hash mismatch across machines)
+
+`manifest.lock.json` stores a SHA-256 of each `.sql` migration so developers cannot
+quietly hand-edit applied SQL. DriftFlow hashes **LF-normalized** content (CRLF /
+BOM are ignored), so a Windows `core.autocrlf` checkout no longer breaks `up` /
+`generate` with `hash_mismatch`.
+
+Recommended in consuming repos (keeps SQL stable in git):
+
+```gitattributes
+*.sql text eol=lf
+**/manifest.lock.json text eol=lf
+**/schema.lock.json text eol=lf
+```
+
+If a manifest was previously re-signed from a CRLF working tree and still fails,
+recalculate hashes without rewriting SQL:
+
+```bash
+driftflow generate --repair
+```
+
+Do **not** delete and regenerate migration files that are already applied in
+production — that rewrites history. Use `--repair` only to refresh hashes.
 
 ## Uso como librería
 
