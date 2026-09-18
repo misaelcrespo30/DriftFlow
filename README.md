@@ -61,6 +61,8 @@ driftflow up              # aplica migraciones pendientes
 driftflow down VERSION    # revierte migraciones posteriores a VERSION
 driftflow undo [n]        # revierte las últimas n migraciones (default 1)
 driftflow rollback [n]    # alias de undo
+driftflow reset           # DROP ALL TABLES (confirm; --allow-prod in production)
+driftflow rebootstrap     # backup? → reset → up → seed (typed DESTROY; not a safe UPDATE)
 driftflow seed            # ejecuta seeders registrados
 driftflow seedgen         # genera templates JSON de seeds desde modelos
 driftflow validate        # valida el directorio de migraciones
@@ -88,6 +90,31 @@ Para `compare`:
 ```bash
 driftflow compare --from postgres://... --to postgres://...
 ```
+
+### `rebootstrap` (destructive)
+
+Destroys schema data, then rebuilds with `up` + `seed`. **Not** a safe production UPDATE.
+
+```bash
+# Interactive: type DESTROY, then choose backup Y/n
+driftflow rebootstrap
+
+# Production ENV requires --allow-prod (ENV, APP_ENV, or ENVIRONMENT = production|prod)
+ENV=production driftflow rebootstrap --allow-prod
+APP_ENV=production driftflow rebootstrap --allow-prod
+
+# CI (no TTY prompts): must pass backup path or --skip-backup
+driftflow rebootstrap --i-know-what-im-doing --backup-output ./backups/ci.sql
+driftflow rebootstrap --i-know-what-im-doing --skip-backup --allow-prod
+```
+
+A dump enables **manual** `initdb restore` only. Docker image-tag rollback does not restore tables.
+Prefer `up` (and your release UPDATE pipeline) when you must keep existing rows.
+
+### Seed idempotency
+
+`seed` re-runs every registered seeder each invocation. DriftFlow does not skip seeders via audit.
+Each seeder must be safe on re-run (`ON CONFLICT` / upsert / DoNothing). Duplicate rows must not abort the run.
 
 Para `audit export`:
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -78,6 +79,18 @@ func openDSN(d string) (*gorm.DB, error) {
 		return gorm.Open(sqlserver.Open(d), &gorm.Config{})
 	}
 	return nil, fmt.Errorf("unsupported DSN: %s", d)
+}
+
+// isProductionEnv reports whether the process is configured as production.
+// Checks ENV, APP_ENV, and ENVIRONMENT (common across DriftFlow and FurySoft stacks).
+func isProductionEnv() bool {
+	for _, key := range []string{"ENV", "APP_ENV", "ENVIRONMENT"} {
+		v := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+		if v == "production" || v == "prod" {
+			return true
+		}
+	}
+	return false
 }
 
 func newUpCommand() *cobra.Command {
@@ -168,6 +181,179 @@ func newSeedCommand() *cobra.Command {
 
 		},
 	}
+}
+
+func newRebootstrapCommand() *cobra.Command {
+	var allowProd bool
+	var iKnow bool
+	var skipBackup bool
+	var backupOutput string
+	var schema string
+	var database string
+
+	cmd := &cobra.Command{
+		Use:   "rebootstrap",
+		Short: "DESTROY schema, then up + seed (optional backup; not a safe UPDATE)",
+		Long: `DANGEROUS: drops all tables (reset), reapplies migrations (up), then runs seed.
+
+This is for lab rebuilds or disaster recovery — NOT a production UPDATE.
+Application Docker-tag rollback does NOT restore destroyed data.
+A successful dump only enables MANUAL restore (initdb restore); rebootstrap never auto-restores.
+
+Confirmation requires typing DESTROY. If you decline the backup, type I ACCEPT DATA LOSS.
+When ENV/APP_ENV/ENVIRONMENT is production|prod, --allow-prod is required. CI may pass --i-know-what-im-doing with
+--backup-output or --skip-backup (still requires --allow-prod in production).`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if isProductionEnv() && !allowProd {
+				return fmt.Errorf("rebootstrap blocked in production; use --allow-prod to override")
+			}
+			if err := confirmRebootstrap(cmd, iKnow, skipBackup, backupOutput); err != nil {
+				return err
+			}
+
+			doBackup := !skipBackup
+			if !iKnow && !skipBackup {
+				want, err := promptBackupBeforeReset(cmd)
+				if err != nil {
+					return err
+				}
+				doBackup = want
+				if !doBackup {
+					if err := confirmDataLoss(cmd); err != nil {
+						return err
+					}
+				}
+			}
+			if !iKnow && skipBackup {
+				if err := confirmDataLoss(cmd); err != nil {
+					return err
+				}
+			}
+			if iKnow && skipBackup {
+				doBackup = false
+			}
+			if doBackup {
+				out := strings.TrimSpace(backupOutput)
+				if out == "" {
+					out = filepath.Join("backups", fmt.Sprintf("rebootstrap-%s.sql", time.Now().UTC().Format("20060102T150405Z")))
+				}
+				if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+					return fmt.Errorf("create backup directory: %w", err)
+				}
+				svc := driftflow.NewDbAdminService(dsn, driver)
+				name, err := svc.ResolveDBName(database)
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Creating backup of %s → %s\n", name, out)
+				if err := svc.Backup(context.Background(), name, out); err != nil {
+					return fmt.Errorf("backup failed; aborting rebootstrap: %w", err)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "Backup completed: %s\n", out)
+				fmt.Fprintln(cmd.OutOrStdout(), "NOTE: restore is manual (driftflow initdb restore). This command will not roll data back automatically.")
+			}
+
+			db, err := openDB()
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "==> reset (drop all tables)")
+			summary, err := driftflow.Reset(db, driftflow.ResetOptions{
+				DSN:      dsn,
+				Driver:   driver,
+				Schema:   schema,
+				Database: database,
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Tables dropped: %d\n", summary.TablesDropped)
+
+			fmt.Fprintln(cmd.OutOrStdout(), "==> up (apply migrations)")
+			if err := driftflow.Up(db, migDir); err != nil {
+				return fmt.Errorf("up failed after reset; restore from backup if needed: %w", err)
+			}
+
+			fmt.Fprintln(cmd.OutOrStdout(), "==> seed")
+			if err := driftflow.Seed(db, seedRunDir); err != nil {
+				return fmt.Errorf("seed failed after up; schema may be empty of seed data: %w", err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Rebootstrap completed.")
+			return nil
+		},
+	}
+
+	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow rebootstrap when ENV/APP_ENV/ENVIRONMENT is production|prod")
+	cmd.Flags().BoolVar(&iKnow, "i-know-what-im-doing", false, "skip interactive prompts (CI); still needs --allow-prod in production")
+	cmd.Flags().BoolVar(&skipBackup, "skip-backup", false, "do not create a dump before reset")
+	cmd.Flags().StringVar(&backupOutput, "backup-output", "", "backup file path (default backups/rebootstrap-<utc>.sql)")
+	cmd.Flags().StringVar(&schema, "schema", "", "database schema to reset")
+	cmd.Flags().StringVar(&database, "database", "", "database name to reset / backup")
+	return cmd
+}
+
+func confirmRebootstrap(cmd *cobra.Command, iKnow, skipBackup bool, backupOutput string) error {
+	if iKnow {
+		if !skipBackup && strings.TrimSpace(backupOutput) == "" {
+			return fmt.Errorf("--i-know-what-im-doing requires --backup-output or --skip-backup")
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), "WARNING: rebootstrap proceeding without interactive confirmation (--i-know-what-im-doing).")
+		return nil
+	}
+	fmt.Fprintln(cmd.OutOrStdout(), "")
+	fmt.Fprintln(cmd.OutOrStdout(), "╔══════════════════════════════════════════════════════════════════╗")
+	fmt.Fprintln(cmd.OutOrStdout(), "║  REBOOTSTRAP — THIS WILL DESTROY ALL DATA IN THE TARGET DATABASE ║")
+	fmt.Fprintln(cmd.OutOrStdout(), "╚══════════════════════════════════════════════════════════════════╝")
+	fmt.Fprintln(cmd.OutOrStdout(), "")
+	fmt.Fprintln(cmd.OutOrStdout(), "This command will:")
+	fmt.Fprintln(cmd.OutOrStdout(), "  1) Optionally create a SQL dump (recommended)")
+	fmt.Fprintln(cmd.OutOrStdout(), "  2) DROP ALL TABLES (reset)")
+	fmt.Fprintln(cmd.OutOrStdout(), "  3) Re-apply migrations (up)")
+	fmt.Fprintln(cmd.OutOrStdout(), "  4) Run seeders (seed)")
+	fmt.Fprintln(cmd.OutOrStdout(), "")
+	fmt.Fprintln(cmd.OutOrStdout(), "Implications:")
+	fmt.Fprintln(cmd.OutOrStdout(), "  • All existing rows will be permanently deleted unless you restore a dump manually.")
+	fmt.Fprintln(cmd.OutOrStdout(), "  • Rolling back Docker application image tags does NOT restore this database.")
+	fmt.Fprintln(cmd.OutOrStdout(), "  • There is NO automatic rollback after reset starts.")
+	fmt.Fprintln(cmd.OutOrStdout(), "  • Prefer a normal migrate 'up' / release UPDATE when you must keep production data.")
+	fmt.Fprintln(cmd.OutOrStdout(), "")
+	fmt.Fprint(cmd.OutOrStdout(), "Type DESTROY to continue (anything else aborts): ")
+	reader := bufio.NewReader(cmd.InOrStdin())
+	input, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return err
+	}
+	if strings.TrimSpace(input) != "DESTROY" {
+		return fmt.Errorf("rebootstrap aborted")
+	}
+	return nil
+}
+
+func promptBackupBeforeReset(cmd *cobra.Command) (bool, error) {
+	fmt.Fprint(cmd.OutOrStdout(), "Create a database dump before reset? [Y/n]: ")
+	reader := bufio.NewReader(cmd.InOrStdin())
+	input, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+	answer := strings.TrimSpace(strings.ToLower(input))
+	if answer == "" || answer == "y" || answer == "yes" {
+		return true, nil
+	}
+	return false, nil
+}
+
+func confirmDataLoss(cmd *cobra.Command) error {
+	fmt.Fprint(cmd.OutOrStdout(), "No backup. Type I ACCEPT DATA LOSS to proceed without a dump: ")
+	reader := bufio.NewReader(cmd.InOrStdin())
+	input, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return err
+	}
+	if strings.TrimSpace(input) != "I ACCEPT DATA LOSS" {
+		return fmt.Errorf("rebootstrap aborted")
+	}
+	return nil
 }
 
 func newSeedgenCommand() *cobra.Command {
@@ -272,7 +458,7 @@ func newResetCommand() *cobra.Command {
 		Use:   "reset",
 		Short: "Drop all tables in the target database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !allowProd && strings.EqualFold(os.Getenv("ENV"), "production") {
+			if !allowProd && isProductionEnv() {
 				return fmt.Errorf("reset blocked in production; use --allow-prod to override")
 			}
 			if !force {
@@ -310,7 +496,7 @@ func newResetCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&force, "force", false, "skip confirmation prompt")
-	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow reset when ENV=production")
+	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow reset when ENV/APP_ENV/ENVIRONMENT is production|prod")
 	cmd.Flags().StringVar(&schema, "schema", "", "database schema to reset")
 	cmd.Flags().StringVar(&database, "database", "", "database name to reset")
 	return cmd
@@ -330,7 +516,7 @@ func newCleanCommand() *cobra.Command {
 		Aliases: []string{"truncate"},
 		Short:   "Delete all data in tables without dropping the schema",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !allowProd && strings.EqualFold(os.Getenv("ENV"), "production") {
+			if !allowProd && isProductionEnv() {
 				return fmt.Errorf("clean blocked in production; use --allow-prod to override")
 			}
 			if !force {
@@ -378,7 +564,7 @@ func newCleanCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&force, "force", false, "skip confirmation prompt")
-	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow clean when ENV=production")
+	cmd.Flags().BoolVar(&allowProd, "allow-prod", false, "allow clean when ENV/APP_ENV/ENVIRONMENT is production|prod")
 	cmd.Flags().StringVar(&schema, "schema", "", "database schema to clean")
 	cmd.Flags().StringVar(&include, "include", "", "include only tables matching the pattern")
 	cmd.Flags().StringVar(&exclude, "exclude", "", "exclude tables matching the pattern")
@@ -725,6 +911,7 @@ func Commands(cfg *config.Config) []*cobra.Command {
 		newUndoCommand(),
 		newRollbackCommand(),
 		newResetCommand(),
+		newRebootstrapCommand(),
 		newCleanCommand(),
 		newSeedCommand(),
 		newSeedgenCommand(),
