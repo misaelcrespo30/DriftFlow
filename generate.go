@@ -454,7 +454,7 @@ func GenerateModelMigrations(models []interface{}, opts GenerateOptions) error {
 		name := fmt.Sprintf("%s_alter_%s_table", ts(now, seq), table)
 		seq++
 
-		up, down := buildAlterSQL(quoteIdent(engineForSQL, table), prev.Columns, modelCols, modelOrder, added, removed, altered)
+		up, down := buildAlterSQLWithEngine(quoteIdent(engineForSQL, table), table, engineForSQL, prev.Columns, modelCols, modelOrder, added, removed, altered)
 		up, down = appendIndexChanges(up, down, table, idxAdded, idxRemoved, engineForSQL)
 		if strings.TrimSpace(up) == "" {
 			continue

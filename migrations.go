@@ -267,7 +267,10 @@ func columnDef(f reflect.StructField, engine string, hasSoftDelete bool) (string
 	if strings.Contains(lowTag, "not null") {
 		parts = append(parts, "not null")
 	}
-	if strings.Contains(lowTag, "uniqueindex") || strings.Contains(lowTag, "unique") {
+	// Column-level UNIQUE only for bare `unique` (or uniqueIndex with soft-delete skip).
+	// Multi-column uniqueIndex:* must NOT stamp UNIQUE onto each participating column —
+	// those are emitted as CREATE UNIQUE INDEX via index plans.
+	if columnDefHasBareUnique(tag) {
 		if normalizeEngine(engine) != "postgres" || !hasSoftDelete {
 			parts = append(parts, "unique")
 		}
@@ -277,6 +280,17 @@ func columnDef(f reflect.StructField, engine string, hasSoftDelete bool) (string
 	}
 
 	return base, strings.Join(parts, " ")
+}
+
+// columnDefHasBareUnique reports whether the GORM tag requests a single-column UNIQUE
+// constraint (tag `unique`), not a named uniqueIndex (composite or single-field index).
+func columnDefHasBareUnique(tag string) bool {
+	for _, t := range parseIndexTags(tag) {
+		if t.Kind == indexKindUniqueConstraint {
+			return true
+		}
+	}
+	return false
 }
 
 // modelsSchema builds a schemaInfo map from the provided models.
